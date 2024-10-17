@@ -140,7 +140,16 @@ public static class Camera
 	public static void Update(GameTime gameTime)
 	{
 		var state = Mouse.GetState();
-		float diff = (state.ScrollWheelValue - lastScroll)*(Cam.Zoom/3000);
+		float diff = (state.ScrollWheelValue - lastScroll);
+		if (Keyboard.GetState().IsKeyDown(Keys.OemPlus))
+		{
+			diff = 1;
+		}else if (Keyboard.GetState().IsKeyDown(Keys.OemMinus))
+		{
+			
+		}
+		
+		diff*=(Cam.Zoom/3000);
 		lastScroll = state.ScrollWheelValue;
 		zoomVelocity += diff*gameTime.GetElapsedSeconds()*25f;
 		Cam.ZoomIn(zoomVelocity);

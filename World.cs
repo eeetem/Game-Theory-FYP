@@ -12,7 +12,7 @@ public static class World
 {
 
 	private static Cell[,] grid;
-	private const int Size = 100;
+	private const int Size = 1000;
 	private static GameState currentState = GameState.PlayGames;
 	private static KeyboardState laststate;
 	
