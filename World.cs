@@ -12,7 +12,7 @@ public static class World
 {
 
 	private static Cell[,] grid;
-	private const int Size = 1000;
+	private const int Size = 250;
 	private static GameState currentState = GameState.PlayGames;
 	private static KeyboardState laststate;
 	
@@ -193,7 +193,9 @@ public static class World
 	}
 	public static void Draw(SpriteBatch spriteBatch, GameTime gameTime)
 	{
-		spriteBatch.Begin(transformMatrix: Camera.GetViewMatrix(), samplerState: SamplerState.PointClamp,sortMode:SpriteSortMode.Texture);
+		spriteBatch.Begin(transformMatrix: Camera.GetViewMatrix(), samplerState: SamplerState.PointClamp);
+
+		var cameraBoundingRectangle = Camera.GetBoundingRectangle();
 
 		for (int x = 0; x < Size; x++)
 		{
@@ -201,13 +203,34 @@ public static class World
 			{
 				var c = grid[x, y];
 				Vector2 pos = new Vector2(x * 50, y * 50);
-				
-				spriteBatch.Draw(c.GetTexture(), pos, c.GetColor());
-				spriteBatch.DrawText(c.Score.ToString(),pos,Color.White);
+
+				// Check if the cell is within the camera's bounding rectangle
+				if (cameraBoundingRectangle.Contains(pos))
+				{
+					spriteBatch.Draw(c.GetTexture(), pos, c.GetColor());
+				}
 			}
 		}
+
 		
-		
+		// Only draw the score if the zoom level is above a certain threshold
+		if (Camera.GetZoomLevel() > 0.3f) // Adjust this value to your needs
+		{
+			for (int x = 0; x < Size; x++)
+			{
+				for (int y = 0; y < Size; y++)
+				{
+					var c = grid[x, y];
+					Vector2 pos = new Vector2(x * 50, y * 50);
+
+					// Check if the cell is within the camera's bounding rectangle
+					if (cameraBoundingRectangle.Contains(pos))
+					{
+						spriteBatch.DrawText(c.Score.ToString(), pos, Color.White);
+					}
+				}
+			}
+		}
 		spriteBatch.End();
 	}
 }

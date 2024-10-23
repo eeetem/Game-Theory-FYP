@@ -143,10 +143,10 @@ public static class Camera
 		float diff = (state.ScrollWheelValue - lastScroll);
 		if (Keyboard.GetState().IsKeyDown(Keys.OemPlus))
 		{
-			diff = 1;
+			diff = 25;
 		}else if (Keyboard.GetState().IsKeyDown(Keys.OemMinus))
 		{
-			
+			diff = -25;
 		}
 		
 		diff*=(Cam.Zoom/3000);
@@ -164,5 +164,30 @@ public static class Camera
 
 		AudioListener.Position =  new Vector3(Cam.Center,0);
 		AudioListener.Velocity = new Vector3(velocity,10);
+	}
+
+
+	
+	public static RectangleF GetBoundingRectangle()
+{
+    var boundingRectangle = Cam.BoundingRectangle;
+
+    // Define the margin
+    float margin = 55; // Adjust this value to your needs
+
+    // Create a new rectangle with the margin
+    var expandedRectangle = new RectangleF(
+        boundingRectangle.Left - margin,
+        boundingRectangle.Top - margin,
+        boundingRectangle.Width + 2 * margin,
+        boundingRectangle.Height + 2 * margin
+    );
+
+    return expandedRectangle;
+}
+
+	public static double GetZoomLevel()
+	{
+		return Cam.Zoom;
 	}
 }
