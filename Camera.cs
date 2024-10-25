@@ -159,7 +159,7 @@ public static class Camera
 		Vector2 move = GetMovementDirection();
 		velocity += move*gameTime.GetElapsedSeconds()*25f* movementSpeed;
 		Cam.Move(velocity  * gameTime.GetElapsedSeconds());
-		Cam.Position = Vector2.Clamp(Cam.Position, new Vector2(-1000, -1000), new Vector2(10000, 10000));
+		//Cam.Position = Vector2.Clamp(Cam.Position, new Vector2(-1000, -1000), new Vector2(10000, 10000));
 		velocity *= gameTime.GetElapsedSeconds()*45;
 
 		AudioListener.Position =  new Vector3(Cam.Center,0);
@@ -190,4 +190,11 @@ public static class Camera
 	{
 		return Cam.Zoom;
 	}
+
+	public static Vector2 ScreenToWorld(Vector2 screenPosition)
+	{
+		// Transform the screen position to world coordinates using the camera's inverse view matrix
+		return Vector2.Transform(screenPosition, Cam.GetInverseViewMatrix());
+	}
+
 }

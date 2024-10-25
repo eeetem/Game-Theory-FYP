@@ -9,12 +9,14 @@ public class Cell : IComparable<Cell>
 {
 	private static GraphicsDevice gref;
 	private static Texture2D sharedTexture;
-	private Color _color;
-	private GameStrategy Strategy;
 	public int Score;
 	public readonly Point position;
 	
 	public readonly List<Cell> AlreadyPlayed = new List<Cell>();//store cells which have already been played with
+
+
+	public float cooperationChance = 0.5f;
+	public float reputationFactor = 0.5f;
 
 	public static void Init(GraphicsDevice g)
 	{
@@ -25,40 +27,32 @@ public class Cell : IComparable<Cell>
 		var data = new Color[size*size];
 		for (int i = 0; i < data.Length; ++i) data[i] = Color.White;
 		sharedTexture.SetData(data);
-		
-		
 	}
-
-
 	public Cell(Point position)
 	{
 		this.position = position;
-		Strategy = GameStrategy.GetRandom();
+		cooperationChance = (float) Random.Shared.NextDouble();
 	}
-	
 	public Texture2D GetTexture()
 	{
 		return sharedTexture;
 	}
-
 	public Color GetColor()
 	{
-		return Strategy.GetDisplayColor();
+		return new Color(1-cooperationChance, cooperationChance, 0);
 	}
-
-	public GameStrategy GetStrategy()
-	{
-		return Strategy;
-	}
-	public void SetStrategy(GameStrategy s)
-	{
-		Strategy = s;
-	}
+	
 
 	public int CompareTo(Cell other)
 	{
 		if (ReferenceEquals(this, other)) return 0;
 		if (other is null) return 1;
 		return Score.CompareTo(other.Score);
+	}
+
+	public bool CooperateOrNot()
+	{
+		var val = Random.Shared.NextDouble();
+		return val < cooperationChance;
 	}
 }
