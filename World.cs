@@ -169,7 +169,7 @@ public static class World
 		a.AlreadyPlayed.Add(b);
 		b.AlreadyPlayed.Add(a);
 	}
-
+/*
 	private static void AdjustStrategy()
 	{
 		foreach (var c in grid)
@@ -178,13 +178,13 @@ public static class World
 			neigh.Add(c); // consider yourself as well
 
 			var scores = neigh.Select(cell => cell.Score).OrderBy(score => score).ToList();
-			double median = scores.Count % 2 == 0 ? 
-				(scores[scores.Count / 2 - 1] + scores[scores.Count / 2]) / 2.0 : 
+			double median = scores.Count % 2 == 0 ?
+				(scores[scores.Count / 2 - 1] + scores[scores.Count / 2]) / 2.0 :
 				scores[scores.Count / 2];
 
-			
-			double temperature = 1.0; // Adjust this parameter as needed
-			double fermiEnergy = median; // Adjust this parameter as needed
+
+			double temperature = 1.0;
+			double fermiEnergy = median;
 			var k = 1;
 
 			List<double> probabilities = neigh.Select(n =>
@@ -192,8 +192,8 @@ public static class World
 				double energy = n.Score; // Assuming score is directly proportional to energy
 				return 1.0 / (1.0 + Math.Exp((energy - fermiEnergy) / (temperature * k))); // Fermi-Dirac distribution
 			}).ToList();
-			
-			
+
+
 			// Generate a random number between 0 and totalScore
 			Random rand = new Random();
 			double randNum = rand.NextDouble() * probabilities.Sum();
@@ -213,13 +213,48 @@ public static class World
 
 				idx++;
 			}
-			
-			//c.SetStrategy(selectedCell.GetStrategy());
+
+			c.UpdateStrategy(selectedCell);
 		}
 
 		currentState = GameState.PlayGames;
 	}
+*/
+	private static void AdjustStrategy()
+	{
+		foreach (var c in grid)
+		{
+			var neigh = GetCellNeighbours(c);
+			neigh.Add(c);//consider yourself aswell
 
+			// Sort the list if needed
+			var ordered = neigh.OrderBy(cell => cell.Score);
+
+			// Calculate the total score
+			double totalScore = ordered.Sum(cell => cell.Score);
+
+			// Generate a random number between 0 and totalScore
+			Random rand = new Random();
+			double randNum = rand.NextDouble() * totalScore;
+
+			// Select the cell based on the random number
+			double currentSum = 0;
+			Cell selectedCell = null;
+			foreach (var cell in ordered)
+			{
+				currentSum += cell.Score;
+				if (randNum <= currentSum)
+				{
+					selectedCell = cell;
+					break;
+				}
+			}
+
+			c.UpdateStrategy(selectedCell);
+		}
+
+		currentState = GameState.PlayGames;
+	}
 	public static void Draw(SpriteBatch spriteBatch, GameTime gameTime)
 	{
 		spriteBatch.Begin(transformMatrix: Camera.GetViewMatrix(), samplerState: SamplerState.PointClamp);
@@ -228,7 +263,7 @@ public static class World
 
 		// Get the top-left corner of the visible area in the world space
 		Vector2 cameraTopLeft = cameraBoundingRectangle.TopLeft;
-		
+
 		// Calculate the offset for wrapping
 		int startX = (int) Math.Floor(cameraTopLeft.X / gridSize);
 		int startY = (int) Math.Floor(cameraTopLeft.Y / gridSize);

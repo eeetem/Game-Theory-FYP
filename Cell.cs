@@ -17,6 +17,7 @@ public class Cell : IComparable<Cell>
 
 	public float cooperationChance = 0.5f;
 	public float reputationFactor = 0.5f;
+	const float mutationFactor = 0.05f;
 
 	public static void Init(GraphicsDevice g)
 	{
@@ -54,5 +55,13 @@ public class Cell : IComparable<Cell>
 	{
 		var val = Random.Shared.NextDouble();
 		return val < cooperationChance;
+	}
+
+	public void UpdateStrategy(Cell candidate)
+	{
+		//get halfway point between the two strategies
+		cooperationChance = (cooperationChance + candidate.cooperationChance) / 2;
+		cooperationChance += (float) Random.Shared.NextDouble() * mutationFactor;
+		
 	}
 }
