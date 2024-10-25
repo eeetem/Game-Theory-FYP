@@ -8,8 +8,6 @@ namespace Game_Theory_FYP;
 
 public class Cell : IComparable<Cell>
 {
-	private static GraphicsDevice gref;
-	private static Texture2D sharedTexture;
 	public int Score;
 	public readonly Point position;
 	
@@ -32,16 +30,7 @@ public class Cell : IComparable<Cell>
 
 
 	public object lockObject = new object();
-	public static void Init(GraphicsDevice g)
-	{
-		gref = g;
-		var size = 50;
-		sharedTexture = new Texture2D(gref, size, size);
-		
-		var data = new Color[size*size];
-		for (int i = 0; i < data.Length; ++i) data[i] = Color.White;
-		sharedTexture.SetData(data);
-	}
+
 	public Cell(Point position)
 	{
 		this.position = position;
@@ -56,10 +45,7 @@ public class Cell : IComparable<Cell>
 			_knownReputations.TryAdd(n, 0.5f);
 		}
 	}
-	public Texture2D GetTexture()
-	{
-		return sharedTexture;
-	}
+
 	public Color GetColor()
 	{
 		return new Color(1-CooperationChance, CooperationChance, 0);
@@ -75,9 +61,10 @@ public class Cell : IComparable<Cell>
 
 	public bool CooperateOrNot(Cell oponent)
 	{
+		var chance = CooperationChance;
+		chance += ReputationFactor * _knownReputations[oponent];
 		var val = Random.Shared.NextDouble();
-		val += ReputationFactor * _knownReputations[oponent];
-		return val < CooperationChance;
+		return val < chance;
 	}
 
 	public void UpdateStrategy(Cell candidate)
@@ -88,7 +75,7 @@ public class Cell : IComparable<Cell>
 		
 		ReputationFactor = candidate.ReputationFactorCache;
 		ReputationFactor += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
-		ReputationFactor = Math.Clamp(ReputationFactor, -10, 10);
+		ReputationFactor = Math.Clamp(ReputationFactor, -1, 1);
 	
 	}
 

@@ -27,7 +27,6 @@ public class Game1 : Game
 		base.Initialize();
 		Camera.Init(GraphicsDevice,Window);
 		TextRenderer.Init(Content,GraphicsDevice);
-		Cell.Init(GraphicsDevice);
 		World.Init();
 		
 	}

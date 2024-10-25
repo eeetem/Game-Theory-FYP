@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGame.Extended;
 using MonoGame.Extended.Particles;
 
 namespace Game_Theory_FYP;
@@ -90,12 +91,15 @@ public static class World
 				switch (currentState)
 				{
 					case GameState.PlayGames:
+						Console.WriteLine("Playing Games");
 						PlayGames();
 						break;
 					case GameState.AnnounceReputation:
+						Console.WriteLine("Announceing Reputation");
 						AnnounceReputation();
 						break;
 					case GameState.AdjustStrategy:
+						Console.WriteLine("Adjusting Strategy");
 						AdjustStrategy();
 						break;
 				}
@@ -355,7 +359,15 @@ public static class World
 		// Calculate the offset for wrapping
 		int startX = (int) Math.Floor(cameraTopLeft.X / gridSize);
 		int startY = (int) Math.Floor(cameraTopLeft.Y / gridSize);
+		
+		// Get the mouse position in screen space
+		var mouseState = Mouse.GetState();
+		Vector2 mousePosition = new Vector2(mouseState.X, mouseState.Y);
 
+		// Transform the mouse position to world space
+		Vector2 worldMousePosition = Vector2.Transform(mousePosition, Matrix.Invert(Camera.GetViewMatrix()));
+		Cell HighlightedCell = null;
+		Vector2 HighletCellDrawpos = Vector2.Zero;
 		for (int x = startX; x < startX + (cameraBoundingRectangle.Width / gridSize) + 2; x++)
 		{
 			for (int y = startY; y < startY + (cameraBoundingRectangle.Height / gridSize) + 2; y++)
@@ -365,15 +377,66 @@ public static class World
 
 				var c = grid.GetElement(wrappedX, wrappedY);
 
-				Vector2 pos = new Vector2(x * gridSize, y * gridSize);
+				var pos = new Vector2(x * gridSize, y * gridSize);
 
-				spriteBatch.Draw(c.GetTexture(), pos, c.GetColor());
+				spriteBatch.FillRectangle(new Rectangle((int) pos.X, (int) pos.Y, (int) gridSize, (int) gridSize), c.GetColor());
 				if (Camera.GetZoomLevel() > 0.3f)
 				{
 					spriteBatch.DrawText(c.Score.ToString(), pos, Color.White);
 				}
+				//highlight tile under mouse
+				if (new Rectangle((int) pos.X, (int) pos.Y, (int) gridSize, (int) gridSize).Contains(worldMousePosition))
+				{
+					HighlightedCell = c;
+					HighletCellDrawpos = pos;
+				}
+				
 			}
 		}
+		if(HighlightedCell != null)
+		{
+			
+			spriteBatch.DrawRectangle(new Rectangle((int) HighletCellDrawpos.X, (int) HighletCellDrawpos.Y, (int) gridSize, (int) gridSize), Color.White);
+			
+			var neighbors = GetCellNeighbours(HighlightedCell);
+			foreach (var neighbor in neighbors)
+			{
+				Vector2 relativePos = new Vector2(neighbor.position.X - HighlightedCell.position.X, neighbor.position.Y - HighlightedCell.position.Y);
+				spriteBatch.DrawRectangle(new Rectangle((int) (HighletCellDrawpos.X + relativePos.X * gridSize), (int) (HighletCellDrawpos.Y + relativePos.Y * gridSize), (int) gridSize, (int) gridSize), Color.White);
+				//draw 2 rectnagles singifiying who cooperated and who didnt
+				int smallerSize = (int)(gridSize * 0.8); // Adjust the factor to make the rectangles smaller
+				if (neighbor.AlreadyPlayed.ContainsKey(HighlightedCell))
+				{
+					// Draw white background
+					spriteBatch.FillRectangle(new Rectangle((int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - smallerSize) / 2), (int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - smallerSize) / 2), smallerSize, smallerSize), Color.White);
+
+					if (neighbor.AlreadyPlayed[HighlightedCell])
+					{
+						spriteBatch.DrawRectangle(new Rectangle((int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - smallerSize) / 2), (int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - smallerSize) / 2), smallerSize, smallerSize), Color.Green);
+					}
+					else
+					{
+						spriteBatch.DrawRectangle(new Rectangle((int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - smallerSize) / 2), (int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - smallerSize) / 2), smallerSize, smallerSize), Color.Red);
+					}
+				}
+				if (HighlightedCell.AlreadyPlayed.ContainsKey(neighbor))
+				{
+					// Draw white background
+					spriteBatch.FillRectangle(new Rectangle((int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - smallerSize) / 2), (int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - smallerSize) / 2), smallerSize, smallerSize), Color.White);
+
+					if (HighlightedCell.AlreadyPlayed[neighbor])
+					{
+						spriteBatch.DrawRectangle(new Rectangle((int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - smallerSize) / 2), (int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - smallerSize) / 2), smallerSize, smallerSize), Color.Green);
+					}
+					else
+					{
+						spriteBatch.DrawRectangle(new Rectangle((int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - smallerSize) / 2), (int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - smallerSize) / 2), smallerSize, smallerSize), Color.Red);
+					}
+				}
+			}
+
+		}
+	
 		spriteBatch.End();
 	}
 
