@@ -23,9 +23,9 @@ public class Cell : IComparable<Cell>
 	
 	
 	const float MutationFactor = 0.01f;
-	const float BaseRepChange = 0.1f;
+	public const float BaseRepChange = 0.1f;
 
-	readonly ConcurrentDictionary<Cell,float> _knownReputations = new ConcurrentDictionary<Cell, float>();
+	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
 	readonly ConcurrentDictionary<Cell,float> _trust = new ConcurrentDictionary<Cell, float>();
 
 
@@ -35,14 +35,14 @@ public class Cell : IComparable<Cell>
 	{
 		this.position = position;
 		CooperationChance = (float) Random.Shared.NextDouble();
-		ReputationFactor = 1f;
+		ReputationFactor = (float) (Random.Shared.NextDouble() * 2 - 1.0);
 	}
 
 	public void InitiliaseRep(List<Cell> neighbours)
 	{
 		foreach (var n in neighbours)
 		{
-			_knownReputations.TryAdd(n, 0.5f);
+			KnownReputations.TryAdd(n, 0.5f);
 		}
 	}
 
@@ -50,7 +50,11 @@ public class Cell : IComparable<Cell>
 	{
 		return new Color(1-CooperationChance, CooperationChance, 0);
 	}
-	
+	public Color GetColorRep()
+	{
+		var normRep = (ReputationFactor + 1)/2;
+		return new Color(1-normRep, normRep, 0);
+	}
 
 	public int CompareTo(Cell other)
 	{
@@ -62,7 +66,7 @@ public class Cell : IComparable<Cell>
 	public bool CooperateOrNot(Cell oponent)
 	{
 		var chance = CooperationChance;
-		chance += ReputationFactor * _knownReputations[oponent];
+		chance += ReputationFactor * KnownReputations[oponent];
 		var val = Random.Shared.NextDouble();
 		return val < chance;
 	}
@@ -81,19 +85,19 @@ public class Cell : IComparable<Cell>
 
 	public void TellReputation(Cell teller, Cell opponent, bool opponentCooperated)
 	{
-		if(!_knownReputations.ContainsKey(opponent)) return;
+		if(!KnownReputations.ContainsKey(opponent)) return;
 		var trust = _trust[teller];
 		var changeMagnitude = opponentCooperated ? BaseRepChange : -BaseRepChange;
 		changeMagnitude *= trust;
-		_knownReputations[opponent] += changeMagnitude;
-		_knownReputations[opponent] = Math.Clamp(_knownReputations[opponent], -1, 1);
+		KnownReputations[opponent] += changeMagnitude;
+		KnownReputations[opponent] = Math.Clamp(KnownReputations[opponent], -1, 1);
 		
 	}
 
 	public void CacheTrust()
 	{
 		_trust.Clear();
-		foreach (var kvp in _knownReputations)
+		foreach (var kvp in KnownReputations)
 		{
 			_trust.TryAdd(kvp.Key, kvp.Value);
 		}
