@@ -26,12 +26,21 @@ public static class World
 	public static void Init()
 	{
 
-		grid = new WrappedGrid<Cell>(250);
+		grid = new WrappedGrid<Cell>(100);
 		for (int x = 0; x < grid.Size; x++)
 		{
 			for (int y = 0; y < grid.Size; y++)
 			{
 				grid.InternalGrid[x, y] = new Cell(new Point(x,y));
+			}
+		}
+		
+		for (int x = 0; x < grid.Size; x++)
+		{
+			for (int y = 0; y < grid.Size; y++)
+			{
+				var c = grid.GetElement(x,y);
+				c.InitiliaseRep(GetCellNeighbours(c));
 			}
 		}
 
@@ -73,11 +82,10 @@ public static class World
 	public static void Tick()
 	{
 
-		lock (lockObject)
+		Task t = new Task(delegate
 		{
-			Task t = new Task(delegate
+			lock (lockObject)
 			{
-
 				tickProcessing = true;
 				switch (currentState)
 				{
@@ -85,7 +93,7 @@ public static class World
 						PlayGames();
 						break;
 					case GameState.AnnounceReputation:
-						//todo
+						AnnounceReputation();
 						break;
 					case GameState.AdjustStrategy:
 						AdjustStrategy();
@@ -93,11 +101,60 @@ public static class World
 				}
 
 				tickProcessing = false;
+			}
+		});
 
-			});
+		t.Start();
+	}
 
-			t.Start();
+	private static void AnnounceReputation()
+	{
+		
+		
+		Parallel.ForEach(grid, c =>
+		{
+			c.CacheTrust();
+		});
+		Parallel.ForEach(grid ,c =>
+		{
+			var neighours = GetCellNeighbours(c);
+			foreach (var neighour in neighours)
+			{
+				foreach (var opponent in c.AlreadyPlayed)
+				{
+					if (opponent.Key == neighour)
+					{
+						continue;
+					}
+
+					neighour.TellReputation(c, opponent.Key, opponent.Value);
+				}
+			}
+
+		});
+		currentState = GameState.AdjustStrategy;
+	}
+
+	public static void PrintDetails()
+	{
+		//calculate average coopratation, score, reputation
+		float avgCoop = 0;
+		float avgRepFactor = 0;
+		float avgScore = 0;
+		foreach (var c in grid)
+		{
+			avgCoop += c.CooperationChance;
+			avgRepFactor += c.ReputationFactor;
+			avgScore += c.Score;
 		}
+		
+		avgCoop /= grid.Size * grid.Size;
+		avgRepFactor /= grid.Size * grid.Size;
+		avgScore /= grid.Size * grid.Size;
+		
+		Console.WriteLine("Average Cooperation: " + avgCoop);
+		Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
+		Console.WriteLine("Average Score: " + avgScore);
 
 	}
 
@@ -125,49 +182,72 @@ public static class World
 
 	public static void PlayGames()
 	{
-		foreach (var c in grid)
+
+		Parallel.ForEach(grid, c =>
 		{
 			c.Score = 0;
 			c.AlreadyPlayed.Clear();
-		}
-
-		foreach (var c in grid)
+		});
+		
+		Parallel.ForEach(grid, c =>
 		{
 			var neig = GetCellNeighbours(c);
 			foreach (var n in neig)
 			{
-				if (c.AlreadyPlayed.Contains(n)) continue;//dont repeat games with same neighbours
 				PlayGame(c,n);
 			}
-		}
+		});
+	
 
-		currentState = GameState.AdjustStrategy;
+		currentState = GameState.AnnounceReputation;
 	}
 
 	private static void PlayGame(Cell a, Cell b)
 	{
-		bool aCooperate = a.CooperateOrNot();
-		bool bCooperate = b.CooperateOrNot();
+		object l1;
+		object l2;
+		if (a.position.X + a.position.Y*grid.Size > b.position.X + b.position.Y*grid.Size)
+		{
+			l1 = a.lockObject;
+			l2 = b.lockObject;
+		}else
+		{
+			l1 = b.lockObject;
+			l2 = a.lockObject;
+		}
+		lock (l1)
+		{
+			lock (l2)
+			{
+				
+				if (a.AlreadyPlayed.ContainsKey(b))
+				{
+					return;
+				}
+				bool aCooperate = a.CooperateOrNot(b);
+				bool bCooperate = b.CooperateOrNot(a);
 
-		if (aCooperate && bCooperate)
-		{
-			a.Score += 3;
-			b.Score += 3;
-		}else if (aCooperate && !bCooperate)
-		{
-			b.Score += 5;
+				if (aCooperate && bCooperate)
+				{
+					a.Score += 3;
+					b.Score += 3;
+				}else if (aCooperate && !bCooperate)
+				{
+					b.Score += 5;
+				}
+				else if (bCooperate && !aCooperate)
+				{
+					a.Score += 5;
+				}
+				else
+				{
+					a.Score += 1;
+					b.Score += 1;
+				}
+				a.AlreadyPlayed.Add(b,bCooperate);
+				b.AlreadyPlayed.Add(a,aCooperate);
+			}
 		}
-		else if (bCooperate && !aCooperate)
-		{
-			a.Score += 5;
-		}
-		else
-		{
-			a.Score += 1;
-			b.Score += 1;
-		}
-		a.AlreadyPlayed.Add(b);
-		b.AlreadyPlayed.Add(a);
 	}
 /*
 	private static void AdjustStrategy()
@@ -222,10 +302,17 @@ public static class World
 */
 	private static void AdjustStrategy()
 	{
-		foreach (var c in grid)
+
+
+		Parallel.ForEach(grid, c =>
+		{
+			c.CacheStrategy();
+		});
+		
+		Parallel.ForEach(grid, c =>
 		{
 			var neigh = GetCellNeighbours(c);
-			neigh.Add(c);//consider yourself aswell
+			neigh.Add(c); //consider yourself aswell
 
 			// Sort the list if needed
 			var ordered = neigh.OrderBy(cell => cell.Score);
@@ -251,7 +338,8 @@ public static class World
 			}
 
 			c.UpdateStrategy(selectedCell);
-		}
+		});
+		PrintDetails();
 
 		currentState = GameState.PlayGames;
 	}
@@ -290,4 +378,3 @@ public static class World
 	}
 
 }
-

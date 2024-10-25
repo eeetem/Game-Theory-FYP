@@ -55,10 +55,7 @@ public class Game1 : Game
 		GraphicsDevice.Clear(Color.DarkGray);
 		
 		World.Draw(_spriteBatch, gameTime);
-		
-		var framerate = (1 / gameTime.ElapsedGameTime.TotalSeconds);
-		
-		Console.WriteLine(framerate);
+
 
 		base.Draw(gameTime);
 	}
