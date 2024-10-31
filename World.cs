@@ -85,6 +85,8 @@ public static class World
 	
 	private static object lockObject = new object();
 	private static bool tickProcessing = false;
+
+	private static int Generation = 0;
 	public static void Tick()
 	{
 
@@ -191,6 +193,8 @@ public static class World
 
 	public static void PlayGames()
 	{
+		Console.WriteLine("Generation: "+Generation);
+		Generation++;
 
 		Parallel.ForEach(grid, c =>
 		{

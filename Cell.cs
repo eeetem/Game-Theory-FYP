@@ -84,11 +84,11 @@ public class Cell : IComparable<Cell>
 
 	public void UpdateStrategy(Cell candidate)
 	{
-		CooperationChance = candidate.CooperationChanceCache;
+		CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, 0.7f);
 		CooperationChance += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
 		CooperationChance = Math.Clamp(CooperationChance, 0, 1);
 		
-		ReputationFactor = candidate.ReputationFactorCache;
+		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, 0.7f);
 		ReputationFactor += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
 		ReputationFactor = Math.Clamp(ReputationFactor, -1, 1);
 	
