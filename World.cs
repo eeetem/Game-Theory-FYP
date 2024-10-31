@@ -63,6 +63,11 @@ public static class World
 			pause = !pause;
 		}
 
+		if (state.IsKeyDown(Keys.LeftShift))
+		{
+			pause = true;
+		}
+
 		if (!pause)
 		{
 			msTimeTillTick -= gameTime.ElapsedGameTime.Milliseconds;
@@ -131,7 +136,7 @@ public static class World
 						continue;
 					}
 
-					neighour.TellReputation(c, opponent.Key, opponent.Value);
+					neighour.TellReputation(c, opponent.Key, opponent.Value.Item2);
 				}
 			}
 
@@ -256,8 +261,15 @@ public static class World
 					a.KnownReputations[b] -= Cell.BaseRepChange;
 					b.KnownReputations[a] -= Cell.BaseRepChange;
 				}
-				a.AlreadyPlayed.Add(b,bCooperate);
-				b.AlreadyPlayed.Add(a,aCooperate);
+
+				if (!a.AlreadyPlayed.TryAdd(b,(aCooperate, bCooperate)))
+				{
+					throw new Exception("Played Game With Already Played");
+				}
+				if(!b.AlreadyPlayed.TryAdd(a,(bCooperate,aCooperate)))
+				{
+					throw new Exception("Played Game With Already Played");
+				}
 			}
 		}
 	}
@@ -431,7 +443,7 @@ public static class World
 				if (neighbor.AlreadyPlayed.ContainsKey(HighlightedCell))
 				{
 					// Draw two smaller rectangles side by side
-					if (neighbor.AlreadyPlayed[HighlightedCell])
+					if (neighbor.AlreadyPlayed[HighlightedCell].Item2)
 					{
 						spriteBatch.FillRectangle(new Rectangle(
 							(int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - innerSize) / 2),
@@ -445,7 +457,7 @@ public static class World
 							(int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - innerSize) / 2),
 							halfInnerSize, innerSize), Color.Red);
 					}
-					spriteBatch.DrawText("N", new Vector2(
+					spriteBatch.DrawText("O", new Vector2(
 						(int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - innerSize) / 2),
 						(int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - innerSize) / 2)), Color.White);
 
@@ -454,7 +466,7 @@ public static class World
 				if (HighlightedCell.AlreadyPlayed.ContainsKey(neighbor))
 				{
 					// Draw two smaller rectangles side by side
-					if (HighlightedCell.AlreadyPlayed[neighbor])
+					if (HighlightedCell.AlreadyPlayed[neighbor].Item2)
 					{
 						spriteBatch.FillRectangle(new Rectangle(
 							(int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - innerSize) / 2 + halfInnerSize),
@@ -468,7 +480,7 @@ public static class World
 							(int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - innerSize) / 2),
 							halfInnerSize, innerSize), Color.Red);
 					}
-					spriteBatch.DrawText("O", new Vector2(
+					spriteBatch.DrawText("N", new Vector2(
 						(int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - innerSize) / 2 + halfInnerSize),
 						(int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - innerSize) / 2)), Color.White);
 

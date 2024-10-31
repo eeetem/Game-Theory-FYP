@@ -11,7 +11,8 @@ public class Cell : IComparable<Cell>
 	public int Score;
 	public readonly Point position;
 	
-	public readonly Dictionary<Cell,bool> AlreadyPlayed = new Dictionary<Cell, bool>();
+	//key, you coop, opponent coop
+	public readonly ConcurrentDictionary<Cell,(bool,bool)> AlreadyPlayed = new ConcurrentDictionary<Cell, (bool,bool)>();
 
 
 	public float CooperationChance = 0.5f;
@@ -48,7 +49,17 @@ public class Cell : IComparable<Cell>
 
 	public Color GetColor()
 	{
-		return new Color(1-CooperationChance, CooperationChance, 0);
+		var coopPercent = 0.5f;
+		int cooped = 0;
+		foreach (var cell in new ConcurrentDictionary<Cell, (bool,bool)>(AlreadyPlayed))
+		{
+			if (cell.Value.Item1)
+			{
+				cooped++;
+			}
+		}
+		coopPercent = cooped / (float) AlreadyPlayed.Count;
+		return new Color(1-coopPercent, coopPercent, 0);
 	}
 	public Color GetColorRep()
 	{
