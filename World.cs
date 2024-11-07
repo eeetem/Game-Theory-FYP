@@ -277,57 +277,7 @@ public static class World
 			}
 		}
 	}
-/*
-	private static void AdjustStrategy()
-	{
-		foreach (var c in grid)
-		{
-			var neigh = GetCellNeighbours(c);
-			neigh.Add(c); // consider yourself as well
 
-			var scores = neigh.Select(cell => cell.Score).OrderBy(score => score).ToList();
-			double median = scores.Count % 2 == 0 ?
-				(scores[scores.Count / 2 - 1] + scores[scores.Count / 2]) / 2.0 :
-				scores[scores.Count / 2];
-
-
-			double temperature = 1.0;
-			double fermiEnergy = median;
-			var k = 1;
-
-			List<double> probabilities = neigh.Select(n =>
-			{
-				double energy = n.Score; // Assuming score is directly proportional to energy
-				return 1.0 / (1.0 + Math.Exp((energy - fermiEnergy) / (temperature * k))); // Fermi-Dirac distribution
-			}).ToList();
-
-
-			// Generate a random number between 0 and totalScore
-			Random rand = new Random();
-			double randNum = rand.NextDouble() * probabilities.Sum();
-
-			// Select the cell based on the random number
-			double currentSum = 0;
-			Cell selectedCell = null;
-			int idx = 0;
-			foreach (var cell in neigh)
-			{
-				currentSum += probabilities[idx];
-				if (randNum <= currentSum)
-				{
-					selectedCell = cell;
-					break;
-				}
-
-				idx++;
-			}
-
-			c.UpdateStrategy(selectedCell);
-		}
-
-		currentState = GameState.PlayGames;
-	}
-*/
 	private static void AdjustStrategy()
 	{
 
