@@ -291,7 +291,7 @@ public static class World
 			c.CacheStrategy();
 		});
 
-		Parallel.For(0, 500, i =>
+		Parallel.For(0, (grid.Size*grid.Size)/2, i =>
 		{
 			//pick random cell
 			var c = grid.GetElement(Random.Shared.Next(grid.Size),Random.Shared.Next(grid.Size));
