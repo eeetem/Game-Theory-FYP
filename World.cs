@@ -120,8 +120,12 @@ public static class World
 
 	private static void AnnounceReputation()
 	{
-		
-		
+
+		if (!Cell.RepEnabled)
+		{
+			currentState = GameState.AdjustStrategy;
+			return;
+		}
 		Parallel.ForEach(grid, c =>
 		{
 			c.CacheTrust();
@@ -286,36 +290,22 @@ public static class World
 		{
 			c.CacheStrategy();
 		});
-		
-		Parallel.ForEach(grid, c =>
+
+		Parallel.For(0, 500, i =>
 		{
-			var neigh = GetCellNeighbours(c);
-			neigh.Add(c); //consider yourself aswell
+			//pick random cell
+			var c = grid.GetElement(Random.Shared.Next(grid.Size),Random.Shared.Next(grid.Size));
+			var neighr = GetCellNeighbours(c);
+			
+			var random = Random.Shared.Next(neighr.Count);
+			var neig = neighr[random];
 
-			// Sort the list if needed
-			var ordered = neigh.OrderBy(cell => cell.Score);
-
-			// Calculate the total score
-			double totalScore = ordered.Sum(cell => cell.Score);
-
-			// Generate a random number between 0 and totalScore
-			Random rand = new Random();
-			double randNum = rand.NextDouble() * totalScore;
-
-			// Select the cell based on the random number
-			double currentSum = 0;
-			Cell selectedCell = null;
-			foreach (var cell in ordered)
+			float temp = 1;
+			double prob = 1 / (Math.Pow(Math.E, -temp*(neig.Score - c.Score)));
+			if (Random.Shared.NextDouble() < prob)
 			{
-				currentSum += cell.Score;
-				if (randNum <= currentSum)
-				{
-					selectedCell = cell;
-					break;
-				}
+				c.UpdateStrategy(neig);//cell can copy multiple cells in 1 go?
 			}
-
-			c.UpdateStrategy(selectedCell);
 		});
 		PrintDetails();
 

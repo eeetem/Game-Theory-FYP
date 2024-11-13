@@ -16,15 +16,19 @@ public class Cell : IComparable<Cell>
 
 
 	public float CooperationChance = 0.5f;
-	public float ReputationFactor = 0f;
+	public float ReputationFactor = -100f;
 	
 	public float CooperationChanceCache = 0f;
 	public float ReputationFactorCache  = 0f;
+	
+	
 
 	
 	
 	const float MutationFactor = 0.01f;
 	public const float BaseRepChange = 0.1f;
+	const float interpolationFactor = 0.7f;
+	public const bool RepEnabled = false;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
 	readonly ConcurrentDictionary<Cell,float> _trust = new ConcurrentDictionary<Cell, float>();
@@ -36,7 +40,8 @@ public class Cell : IComparable<Cell>
 	{
 		this.position = position;
 		CooperationChance = (float) Random.Shared.NextDouble();
-		ReputationFactor = (float) (Random.Shared.NextDouble() * 2 - 1.0);
+		if(RepEnabled)
+			ReputationFactor = (float) (Random.Shared.NextDouble() * 2 - 1.0);
 	}
 
 	public void InitiliaseRep(List<Cell> neighbours)
@@ -63,6 +68,10 @@ public class Cell : IComparable<Cell>
 	}
 	public Color GetColorRep()
 	{
+		if (!RepEnabled)
+		{
+			return new Color(1-CooperationChance, CooperationChance, 0);
+		}
 		var normRep = (ReputationFactor + 1)/2;
 		return new Color(1-normRep, normRep, 0);
 	}
@@ -76,19 +85,23 @@ public class Cell : IComparable<Cell>
 
 	public bool CooperateOrNot(Cell oponent)
 	{
+		if (RepEnabled)
+		{
+			throw new NotImplementedException();
+		}
 		var chance = CooperationChance;
-		chance += ReputationFactor * KnownReputations[oponent];
 		var val = Random.Shared.NextDouble();
 		return val < chance;
 	}
 
 	public void UpdateStrategy(Cell candidate)
 	{
-		CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, 0.7f);
+		CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, interpolationFactor);
 		CooperationChance += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
 		CooperationChance = Math.Clamp(CooperationChance, 0, 1);
 		
-		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, 0.7f);
+		if(!RepEnabled) return;
+		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, interpolationFactor);
 		ReputationFactor += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
 		ReputationFactor = Math.Clamp(ReputationFactor, -1, 1);
 	
@@ -96,6 +109,8 @@ public class Cell : IComparable<Cell>
 
 	public void TellReputation(Cell teller, Cell opponent, bool opponentCooperated)
 	{
+		if(!RepEnabled) return;
+		
 		if(!KnownReputations.ContainsKey(opponent)) return;
 		var trust = _trust[teller];
 		var changeMagnitude = opponentCooperated ? BaseRepChange : -BaseRepChange;
