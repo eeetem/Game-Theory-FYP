@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -8,6 +9,11 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.Particles;
+using OxyPlot;
+using OxyPlot.Legends;
+using OxyPlot.Series;
+using OxyPlot.SkiaSharp;
+using SkiaSharp;
 
 namespace Game_Theory_FYP;
 
@@ -16,7 +22,8 @@ public static class World
 
 	private static WrappedGrid<Cell> grid;
 	private static GameState currentState = GameState.PlayGames;
-	private static KeyboardState laststate;
+	private static KeyboardState lastkeyboardstate;
+	private static MouseState lastmousestate;
 	
 	private enum GameState
 	{
@@ -45,7 +52,7 @@ public static class World
 			}
 		}
 
-		laststate = Keyboard.GetState();
+		lastkeyboardstate = Keyboard.GetState();
 	}
 
 
@@ -53,20 +60,9 @@ public static class World
 	private static float msTimeTillTick = 100;
 	public static void Update(GameTime gameTime)
 	{
-		var state = Keyboard.GetState();
-		if (state.IsKeyDown(Keys.Enter) && laststate.IsKeyUp(Keys.Enter))
-		{
-			Tick();
-		}
-		if (state.IsKeyDown(Keys.Space) && laststate.IsKeyUp(Keys.Space))
-		{
-			pause = !pause;
-		}
-
-		if (state.IsKeyDown(Keys.LeftShift))
-		{
-			pause = true;
-		}
+		var kstate = Keyboard.GetState();
+		var mstate = Mouse.GetState();
+		
 
 		if (!pause)
 		{
@@ -77,9 +73,41 @@ public static class World
 				msTimeTillTick = 10;
 			}
 		}
+		if(!Game1.instance.IsActive) return;
+		if (kstate.IsKeyDown(Keys.Enter) && lastkeyboardstate.IsKeyUp(Keys.Enter))
+		{
+			Tick();
+		}
+		if (kstate.IsKeyDown(Keys.Space) && lastkeyboardstate.IsKeyUp(Keys.Space))
+		{
+			pause = !pause;
+		}
+
+		if (kstate.IsKeyDown(Keys.LeftShift))
+		{
+			pause = true;
+		}
+
+		if(kstate.IsKeyDown(Keys.Back) && lastkeyboardstate.IsKeyUp(Keys.Back))
+		{
+			DrawGraph();
+		}
+		
+		if (mstate.LeftButton == ButtonState.Pressed)
+		{
+			GetCellUnderMouse(mstate).CooperationChance = 1;
+			
+		}
+
+		if (mstate.RightButton == ButtonState.Pressed)
+		{
+			GetCellUnderMouse(mstate).CooperationChance = 0;
+		}
 
 
-		laststate = state;
+
+		lastmousestate = mstate;
+		lastkeyboardstate = kstate;
 	}
 	
 	
@@ -149,6 +177,15 @@ public static class World
 		});
 		currentState = GameState.AdjustStrategy;
 	}
+	
+	public class Details
+	{
+		public float AvgCoop { get; set; }
+		public float AvgRepFactor { get; set; }
+		public float AvgScore { get; set; }
+		public int Generation { get; set; }
+	}
+	private static List<Details> detailsList = new List<Details>();
 
 	public static void PrintDetails()
 	{
@@ -167,12 +204,57 @@ public static class World
 		avgRepFactor /= grid.Size * grid.Size;
 		avgScore /= grid.Size * grid.Size;
 		
-		Console.WriteLine("Average Cooperation: " + avgCoop);
+		Console.WriteLine("Average Cooperation Factor: " + avgCoop);
 		Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
 		Console.WriteLine("Average Score: " + avgScore);
-
+		detailsList.Add(new Details
+		{
+			AvgCoop = avgCoop*100,
+			AvgRepFactor = avgRepFactor*100,
+			AvgScore = avgScore,
+			Generation = Generation
+		});
 	}
 
+	public static void DrawGraph()
+	{
+		var plotModel = new PlotModel { Title = "Discrete Strategy 1 Defector" };
+
+		var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
+		var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
+		var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle };
+
+		foreach (var detail in detailsList)
+		{
+			avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
+			avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
+			avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
+		}
+
+		plotModel.Series.Add(avgCoopSeries);
+		plotModel.Series.Add(avgRepFactorSeries);
+		plotModel.Series.Add(avgScoreSeries);
+		
+		// Add a legend to the plot
+		plotModel.IsLegendVisible = true;
+		// Add a legend to the plot
+		var legend = new Legend
+		{
+			LegendPosition = LegendPosition.TopRight,
+			LegendPlacement = LegendPlacement.Outside,
+			LegendOrientation = LegendOrientation.Horizontal,
+			LegendBorderThickness = 5
+		};
+		plotModel.Legends.Add(legend);
+
+		// Render the plot to an image
+		using (var stream = new MemoryStream())
+		{
+			var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+			pngExporter.Export(plotModel, stream);
+			File.WriteAllBytes("plot.png", stream.ToArray());
+		}
+	}
 	public static List<Cell> GetCellNeighbours(Cell c)
 	{
 		List<Cell> neighbours = new List<Cell>(25);
@@ -280,6 +362,30 @@ public static class World
 				}
 			}
 		}
+	}
+	private static Cell GetCellUnderMouse(MouseState mstate)
+	{
+		// Get the camera bounding rectangle
+		var cameraBoundingRectangle = Camera.GetBoundingRectangle();
+		float gridSize = 50f; // Adjust according to your cell size
+
+		// Get the top-left corner of the visible area in the world space
+		Vector2 cameraTopLeft = cameraBoundingRectangle.TopLeft;
+
+		// Get the mouse position in screen space
+		Vector2 mousePosition = new Vector2(mstate.X, mstate.Y);
+
+		// Transform the mouse position to world space
+		Vector2 worldMousePosition = Vector2.Transform(mousePosition, Matrix.Invert(Camera.GetViewMatrix()));
+
+		// Calculate the cell coordinates
+		int cellX = (int)((worldMousePosition.X) / gridSize);
+		int cellY = (int)((worldMousePosition.Y ) / gridSize);
+	//	Console.WriteLine(cellX + " " + cellY);
+
+
+		// Get the cell from the grid
+		return grid.GetElement(cellX, cellY);
 	}
 
 	private static void AdjustStrategy()

@@ -16,7 +16,7 @@ public class Cell : IComparable<Cell>
 
 
 	public float CooperationChance = 0.5f;
-	public float ReputationFactor = -100f;
+	public float ReputationFactor = 0f;
 	
 	public float CooperationChanceCache = 0f;
 	public float ReputationFactorCache  = 0f;
@@ -44,7 +44,8 @@ public class Cell : IComparable<Cell>
 		//skew the chance
 		if (DiscreteStrategy)
 		{
-			CooperationChance = Random.Shared.NextInt64(0, 2);
+			//CooperationChance = Random.Shared.NextInt64(0, 2);
+			CooperationChance = 1;
 		}
 		else
 		{

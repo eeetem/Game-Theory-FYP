@@ -9,6 +9,8 @@ public class Game1 : Game
 {
 	private GraphicsDeviceManager _graphics;
 	private SpriteBatch _spriteBatch;
+	public static Game1 instance;
+
 
 	public Game1()
 	{
@@ -19,7 +21,7 @@ public class Game1 : Game
 		_graphics.SynchronizeWithVerticalRetrace = false;
 		IsFixedTimeStep = true;
 		_graphics.ApplyChanges();
-
+		instance = this;
 	}
 
 	protected override void Initialize()
