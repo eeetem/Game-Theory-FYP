@@ -29,6 +29,7 @@ public class Cell : IComparable<Cell>
 	public const float BaseRepChange = 0.1f;
 	const float interpolationFactor = 0.7f;
 	public const bool RepEnabled = false;
+	public const bool DiscreteStrategy = true;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
 	readonly ConcurrentDictionary<Cell,float> _trust = new ConcurrentDictionary<Cell, float>();
@@ -39,7 +40,21 @@ public class Cell : IComparable<Cell>
 	public Cell(Point position)
 	{
 		this.position = position;
-		CooperationChance = (float) Random.Shared.NextDouble();
+		
+		//skew the chance
+		if (DiscreteStrategy)
+		{
+			CooperationChance = Random.Shared.NextInt64(0, 2);
+		}
+		else
+		{
+			CooperationChance = (float) Random.Shared.NextDouble();
+		}
+			
+		
+		
+		
+		
 		if(RepEnabled)
 			ReputationFactor = (float) (Random.Shared.NextDouble() * 2 - 1.0);
 	}
@@ -96,9 +111,18 @@ public class Cell : IComparable<Cell>
 
 	public void UpdateStrategy(Cell candidate)
 	{
-		CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, interpolationFactor);
-		CooperationChance += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
-		CooperationChance = Math.Clamp(CooperationChance, 0, 1);
+
+		if (DiscreteStrategy)
+		{
+			CooperationChance = candidate.CooperationChanceCache;
+		}
+		else
+		{
+			CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, interpolationFactor);
+			CooperationChance += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
+			CooperationChance = Math.Clamp(CooperationChance, 0, 1);
+		}
+	
 		
 		if(!RepEnabled) return;
 		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, interpolationFactor);
