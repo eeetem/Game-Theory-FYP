@@ -25,11 +25,11 @@ public class Cell : IComparable<Cell>
 
 	
 	
-	const float MutationFactor = 0.01f;
+	const float MutationFactor = 0.1f;
 	public const float BaseRepChange = 0.1f;
 	const float interpolationFactor = 0.7f;
 	public const bool RepEnabled = false;
-	public const bool DiscreteStrategy = true;
+	public const bool DiscreteStrategy = false;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
 	readonly ConcurrentDictionary<Cell,float> _trust = new ConcurrentDictionary<Cell, float>();
@@ -70,19 +70,9 @@ public class Cell : IComparable<Cell>
 
 	public Color GetColor()
 	{
-		var coopPercent = 0.5f;
-		int cooped = 0;
-		foreach (var cell in new ConcurrentDictionary<Cell, (bool,bool)>(AlreadyPlayed))
-		{
-			if (cell.Value.Item1)
-			{
-				cooped++;
-			}
-		}
-		coopPercent = cooped / (float) AlreadyPlayed.Count;
 		return new Color(1-coopPercent, coopPercent, 0);
 	}
-	public Color GetColorRep()
+	public Color GetColorOutline()
 	{
 		if (!RepEnabled)
 		{
@@ -120,7 +110,7 @@ public class Cell : IComparable<Cell>
 		else
 		{
 			CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, interpolationFactor);
-			CooperationChance += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
+			CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
 			CooperationChance = Math.Clamp(CooperationChance, 0, 1);
 		}
 	
@@ -158,5 +148,19 @@ public class Cell : IComparable<Cell>
 	{
 		CooperationChanceCache = CooperationChance;
 		ReputationFactorCache = ReputationFactor;
+	}
+	
+	float coopPercent = 0.5f;
+	public void CalcCoopPercent()
+	{
+		int cooped = 0;
+		foreach (var cell in new ConcurrentDictionary<Cell, (bool,bool)>(AlreadyPlayed))
+		{
+			if (cell.Value.Item1)
+			{
+				cooped++;
+			}
+		}
+		coopPercent = cooped / (float) AlreadyPlayed.Count;
 	}
 }

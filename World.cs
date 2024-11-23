@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -158,7 +159,7 @@ public static class World
 		{
 			c.CacheTrust();
 		});
-		Parallel.ForEach(grid ,c =>
+		Parallel.ForEach(grid,c =>
 		{
 			var neighours = GetCellNeighbours(c);
 			foreach (var neighour in neighours)
@@ -184,77 +185,117 @@ public static class World
 		public float AvgRepFactor { get; set; }
 		public float AvgScore { get; set; }
 		public int Generation { get; set; }
+		public int CoopGames { get; set; }
+		public int BetrayedGames { get; set; }
+		public int DefectedGames { get; set; }
 	}
 	private static List<Details> detailsList = new List<Details>();
 
 	public static void PrintDetails()
 	{
 		//calculate average coopratation, score, reputation
-		float avgCoop = 0;
+		float avgCoopfactor = 0;
 		float avgRepFactor = 0;
 		float avgScore = 0;
+
 		foreach (var c in grid)
 		{
-			avgCoop += c.CooperationChance;
+			avgCoopfactor += c.CooperationChance;
 			avgRepFactor += c.ReputationFactor;
 			avgScore += c.Score;
 		}
 		
-		avgCoop /= grid.Size * grid.Size;
+		avgCoopfactor /= grid.Size * grid.Size;
 		avgRepFactor /= grid.Size * grid.Size;
 		avgScore /= grid.Size * grid.Size;
 		
-		Console.WriteLine("Average Cooperation Factor: " + avgCoop);
+		Console.WriteLine("Average Cooperation Factor: " + avgCoopfactor);
 		Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
 		Console.WriteLine("Average Score: " + avgScore);
+		Console.WriteLine("Total Games: " + totalGames );
 		detailsList.Add(new Details
 		{
-			AvgCoop = avgCoop*100,
+			AvgCoop = avgCoopfactor*100,
 			AvgRepFactor = avgRepFactor*100,
 			AvgScore = avgScore,
-			Generation = Generation
+			Generation = Generation,
+			CoopGames = gamesCooped,
+			BetrayedGames = gamesBetrayed,
+			DefectedGames = gamesDefected
+			
 		});
 	}
 
 	public static void DrawGraph()
-	{
-		var plotModel = new PlotModel { Title = "Discrete Strategy 1 Defector" };
+{
+    var plotModel1 = new PlotModel { Title = "Continuous Strategy Random Start" };
 
-		var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
-		var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
-		var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle };
+    var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
+    var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
+    var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle , Color = OxyColors.Red};
 
-		foreach (var detail in detailsList)
-		{
-			avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
-			avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
-			avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
-		}
+    foreach (var detail in detailsList)
+    {
+        avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
+      //  avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
+        avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
+    }
 
-		plotModel.Series.Add(avgCoopSeries);
-		plotModel.Series.Add(avgRepFactorSeries);
-		plotModel.Series.Add(avgScoreSeries);
-		
-		// Add a legend to the plot
-		plotModel.IsLegendVisible = true;
-		// Add a legend to the plot
-		var legend = new Legend
-		{
-			LegendPosition = LegendPosition.TopRight,
-			LegendPlacement = LegendPlacement.Outside,
-			LegendOrientation = LegendOrientation.Horizontal,
-			LegendBorderThickness = 5
-		};
-		plotModel.Legends.Add(legend);
+    plotModel1.Series.Add(avgCoopSeries);
+  //plotModel1.Series.Add(avgRepFactorSeries);
+    plotModel1.Series.Add(avgScoreSeries);
 
-		// Render the plot to an image
-		using (var stream = new MemoryStream())
-		{
-			var pngExporter = new PngExporter { Width = 1280, Height = 720 };
-			pngExporter.Export(plotModel, stream);
-			File.WriteAllBytes("plot.png", stream.ToArray());
-		}
-	}
+    plotModel1.IsLegendVisible = true;
+    var legend1 = new Legend
+    {
+        LegendPosition = LegendPosition.TopRight,
+        LegendPlacement = LegendPlacement.Outside,
+        LegendOrientation = LegendOrientation.Horizontal,
+        LegendBorderThickness = 5
+    };
+    plotModel1.Legends.Add(legend1);
+
+    using (var stream = new MemoryStream())
+    {
+        var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+        pngExporter.Export(plotModel1, stream);
+        File.WriteAllBytes("plot1.png", stream.ToArray());
+    }
+
+    var plotModel2 = new PlotModel { Title = "Continuous Strategy Random Start" };
+
+    var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
+    var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
+    var defectedGamesSeries = new LineSeries { Title = "Mutual Defected Games", MarkerType = MarkerType.Circle, Color = OxyColors.Orange};
+
+    foreach (var detail in detailsList)
+    {
+        coopGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.CoopGames));
+        betrayedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.BetrayedGames));
+        defectedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.DefectedGames));
+    }
+
+    plotModel2.Series.Add(coopGamesSeries);
+    plotModel2.Series.Add(betrayedGamesSeries);
+    plotModel2.Series.Add(defectedGamesSeries);
+
+    plotModel2.IsLegendVisible = true;
+    var legend2 = new Legend
+    {
+        LegendPosition = LegendPosition.TopRight,
+        LegendPlacement = LegendPlacement.Outside,
+        LegendOrientation = LegendOrientation.Horizontal,
+        LegendBorderThickness = 5
+    };
+    plotModel2.Legends.Add(legend2);
+
+    using (var stream = new MemoryStream())
+    {
+        var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+        pngExporter.Export(plotModel2, stream);
+        File.WriteAllBytes("plot2.png", stream.ToArray());
+    }
+}
 	public static List<Cell> GetCellNeighbours(Cell c)
 	{
 		List<Cell> neighbours = new List<Cell>(25);
@@ -272,32 +313,50 @@ public static class World
 				}
 			}
 		}
+		
+		if(neighbours.Count != 24)
+			throw new Exception("Neighbours count is not 24");
 
 		return neighbours;
 	}
 
-
+	static int gamesCooped = 0;
+	static int gamesDefected = 0;
+	static int gamesBetrayed = 0;
+	static int totalGames = 0;
+	private static object countLock = new object();
 	public static void PlayGames()
 	{
 		Console.WriteLine("Generation: "+Generation);
 		Generation++;
-
+		
+		gamesCooped = 0;
+		gamesDefected = 0;
+		gamesBetrayed = 0;
+		totalGames = 0;
 		Parallel.ForEach(grid, c =>
 		{
 			c.Score = 0;
 			c.AlreadyPlayed.Clear();
 		});
 		
-		Parallel.ForEach(grid, c =>
+		int cellsAccounted = 0;
+		var res = Parallel.ForEach(grid, c =>
 		{
+			Interlocked.Increment(ref cellsAccounted);	
 			var neig = GetCellNeighbours(c);
 			foreach (var n in neig)
 			{
 				PlayGame(c,n);
 			}
 		});
-	
+		if(cellsAccounted != grid.Size*grid.Size)
+			throw new Exception("Cells Accounted is not equal to grid size");
 
+		Parallel.ForEach(grid, c =>
+		{
+			c.CalcCoopPercent();
+		});
 		currentState = GameState.AnnounceReputation;
 	}
 
@@ -325,31 +384,39 @@ public static class World
 				}
 				bool aCooperate = a.CooperateOrNot(b);
 				bool bCooperate = b.CooperateOrNot(a);
-
+				Interlocked.Increment(ref totalGames);
 				if (aCooperate && bCooperate)
 				{
-					a.Score += 3;
-					b.Score += 3;
-					a.KnownReputations[b] += Cell.BaseRepChange;
-					b.KnownReputations[a] += Cell.BaseRepChange;
+					Interlocked.Add(ref a.Score, 3);
+					Interlocked.Add(ref b.Score, 3);
+					Interlocked.Increment(ref gamesCooped);
+					
+					// a.KnownReputations[b] += Cell.BaseRepChange;
+					// b.KnownReputations[a] += Cell.BaseRepChange;
 				}else if (aCooperate && !bCooperate)
 				{
-					b.Score += 5;
-					a.KnownReputations[b] -= Cell.BaseRepChange;
-					b.KnownReputations[a] += Cell.BaseRepChange;
+					Interlocked.Add(ref b.Score, 5);
+					Interlocked.Increment(ref gamesBetrayed);
+
+					// a.KnownReputations[b] -= Cell.BaseRepChange;
+					// b.KnownReputations[a] += Cell.BaseRepChange;
 				}
 				else if (bCooperate && !aCooperate)
 				{
-					a.Score += 5;
-					a.KnownReputations[b] += Cell.BaseRepChange;
-					b.KnownReputations[a] -= Cell.BaseRepChange;
+					Interlocked.Add(ref a.Score, 5);
+					Interlocked.Increment(ref gamesBetrayed);
+					// a.KnownReputations[b] += Cell.BaseRepChange;
+					// b.KnownReputations[a] -= Cell.BaseRepChange;
 				}
 				else
 				{
-					a.Score += 1;
-					b.Score += 1;
-					a.KnownReputations[b] -= Cell.BaseRepChange;
-					b.KnownReputations[a] -= Cell.BaseRepChange;
+					
+					Interlocked.Add(ref a.Score, 1);
+					Interlocked.Add(ref b.Score, 1);
+					Interlocked.Increment(ref gamesDefected);
+
+					// a.KnownReputations[b] -= Cell.BaseRepChange;
+					// b.KnownReputations[a] -= Cell.BaseRepChange;
 				}
 
 				if (!a.AlreadyPlayed.TryAdd(b,(aCooperate, bCooperate)))
@@ -451,8 +518,8 @@ public static class World
 
 				spriteBatch.FillRectangle(new Rectangle((int) pos.X, (int) pos.Y, (int) gridSize, (int) gridSize), c.GetColor());
 				
-				spriteBatch.DrawRectangle(new Rectangle((int) pos.X, (int) pos.Y, (int) gridSize, (int) gridSize), c.GetColorRep(),5f);
-				if (Camera.GetZoomLevel() > 0.3f)
+				spriteBatch.DrawRectangle(new Rectangle((int) pos.X, (int) pos.Y, (int) gridSize, (int) gridSize), c.GetColorOutline(),5f);
+				if (Camera.GetZoomLevel() > 0.8f)
 				{
 					spriteBatch.DrawText(c.Score.ToString(), pos, Color.White);
 				}
