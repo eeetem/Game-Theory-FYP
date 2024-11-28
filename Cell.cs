@@ -28,8 +28,11 @@ public class Cell : IComparable<Cell>
 	const float MutationFactor = 0.1f;
 	public const float BaseRepChange = 0.1f;
 	const float interpolationFactor = 0.7f;
-	public const bool RepEnabled = false;
+	
+	
+	public const bool RepEnabled = true;
 	public const bool DiscreteStrategy = false;
+	public const bool ReputationTelling = RepEnabled && false;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
 	readonly ConcurrentDictionary<Cell,float> _trust = new ConcurrentDictionary<Cell, float>();
@@ -41,7 +44,7 @@ public class Cell : IComparable<Cell>
 	{
 		this.position = position;
 		
-		//skew the chance
+
 		if (DiscreteStrategy)
 		{
 			//CooperationChance = Random.Shared.NextInt64(0, 2);
@@ -91,11 +94,23 @@ public class Cell : IComparable<Cell>
 
 	public bool CooperateOrNot(Cell oponent)
 	{
+		
+		float chance = CooperationChance;
 		if (RepEnabled)
 		{
-			throw new NotImplementedException();
+			if (ReputationFactor > 0)
+			{
+				chance = Single.Lerp(chance, KnownReputations[oponent], ReputationFactor);
+			}
+			else
+			{
+				bool positiveChange = KnownReputations[oponent] - chance > 0;
+				if(positiveChange)
+					chance = Single.Lerp(chance, 0, -ReputationFactor);
+				else
+					chance = Single.Lerp(chance, 1, -ReputationFactor);
+			}
 		}
-		var chance = CooperationChance;
 		var val = Random.Shared.NextDouble();
 		return val < chance;
 	}
@@ -116,8 +131,9 @@ public class Cell : IComparable<Cell>
 	
 		
 		if(!RepEnabled) return;
+		
 		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, interpolationFactor);
-		ReputationFactor += (float)(Random.Shared.NextDouble()-0.5) * MutationFactor;
+		ReputationFactor += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
 		ReputationFactor = Math.Clamp(ReputationFactor, -1, 1);
 	
 	}
@@ -129,7 +145,7 @@ public class Cell : IComparable<Cell>
 		if(!KnownReputations.ContainsKey(opponent)) return;
 		var trust = _trust[teller];
 		var changeMagnitude = opponentCooperated ? BaseRepChange : -BaseRepChange;
-		changeMagnitude *= trust;
+	//	changeMagnitude *= trust;
 		KnownReputations[opponent] += changeMagnitude;
 		KnownReputations[opponent] = Math.Clamp(KnownReputations[opponent], -1, 1);
 		

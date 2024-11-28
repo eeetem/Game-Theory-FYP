@@ -151,7 +151,7 @@ public static class World
 	private static void AnnounceReputation()
 	{
 
-		if (!Cell.RepEnabled)
+		if (!Cell.ReputationTelling)
 		{
 			currentState = GameState.AdjustStrategy;
 			return;
@@ -392,22 +392,22 @@ public static class World
 					Interlocked.Add(ref b.Score, 3);
 					Interlocked.Increment(ref gamesCooped);
 					
-					// a.KnownReputations[b] += Cell.BaseRepChange;
-					// b.KnownReputations[a] += Cell.BaseRepChange;
+					a.KnownReputations[b] += Cell.BaseRepChange;
+					b.KnownReputations[a] += Cell.BaseRepChange;
 				}else if (aCooperate && !bCooperate)
 				{
 					Interlocked.Add(ref b.Score, 5);
 					Interlocked.Increment(ref gamesBetrayed);
 
-					// a.KnownReputations[b] -= Cell.BaseRepChange;
-					// b.KnownReputations[a] += Cell.BaseRepChange;
+					a.KnownReputations[b] -= Cell.BaseRepChange;
+					b.KnownReputations[a] += Cell.BaseRepChange;
 				}
 				else if (bCooperate && !aCooperate)
 				{
 					Interlocked.Add(ref a.Score, 5);
 					Interlocked.Increment(ref gamesBetrayed);
-					// a.KnownReputations[b] += Cell.BaseRepChange;
-					// b.KnownReputations[a] -= Cell.BaseRepChange;
+					a.KnownReputations[b] += Cell.BaseRepChange;
+					b.KnownReputations[a] -= Cell.BaseRepChange;
 				}
 				else
 				{
@@ -416,8 +416,8 @@ public static class World
 					Interlocked.Add(ref b.Score, 1);
 					Interlocked.Increment(ref gamesDefected);
 
-					// a.KnownReputations[b] -= Cell.BaseRepChange;
-					// b.KnownReputations[a] -= Cell.BaseRepChange;
+					a.KnownReputations[b] -= Cell.BaseRepChange;
+					b.KnownReputations[a] -= Cell.BaseRepChange;
 				}
 
 				if (!a.AlreadyPlayed.TryAdd(b,(aCooperate, bCooperate)))
