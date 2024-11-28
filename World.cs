@@ -54,6 +54,7 @@ public static class World
 		}
 
 		lastkeyboardstate = Keyboard.GetState();
+		PrintDetails();
 	}
 
 
@@ -228,7 +229,7 @@ public static class World
 
 	public static void DrawGraph()
 {
-    var plotModel1 = new PlotModel { Title = "Continuous Strategy Random Start" };
+    var plotModel1 = new PlotModel { Title = "Continuous Strategy Cooperative Start" };
 
     var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
     var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
@@ -262,7 +263,7 @@ public static class World
         File.WriteAllBytes("plot1.png", stream.ToArray());
     }
 
-    var plotModel2 = new PlotModel { Title = "Continuous Strategy Random Start" };
+    var plotModel2 = new PlotModel { Title = "Continuous Strategy Cooperative Start" };
 
     var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
     var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};

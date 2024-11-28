@@ -49,7 +49,7 @@ public class Cell : IComparable<Cell>
 		}
 		else
 		{
-			CooperationChance = (float) Random.Shared.NextDouble();
+			CooperationChance = 1;
 		}
 			
 		
