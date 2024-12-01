@@ -102,18 +102,22 @@ public class Cell : IComparable<Cell>
 		float chance = CooperationChance;
 		if (RepEnabled)
 		{
-			var rep = 0.5f;
-			if (rep > 0)
+			var repfactor = 0.5f;
+			if (repfactor > 0)
 			{
-				chance = Single.Lerp(chance, KnownReputations[oponent], rep);
+				chance = Single.Lerp(chance, KnownReputations[oponent], repfactor);
 			}
 			else
 			{ //todo stop from going too far
-				bool positiveChange = KnownReputations[oponent] - chance > 0;
-				if(positiveChange)
-					chance = Single.Lerp(chance, 0, -rep);
-				else
-					chance = Single.Lerp(chance, 1, -rep);
+				bool positiveChangeForRep = KnownReputations[oponent] - chance > 0;
+				float negativeTarget = positiveChangeForRep ? 0 : 1;
+				float maxDist = Math.Abs(chance -  KnownReputations[oponent]);
+				float targetDist = Math.Abs(chance - negativeTarget);
+				if(targetDist > maxDist)
+					 negativeTarget = chance + (positiveChangeForRep ? -maxDist : maxDist);
+				
+				chance = Single.Lerp(chance, negativeTarget, -repfactor);
+			
 			}
 		}
 		var val = Random.Shared.NextDouble();

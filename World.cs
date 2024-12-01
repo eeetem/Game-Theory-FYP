@@ -310,11 +310,11 @@ public static class World
 }
 	public static List<Cell> GetCellNeighbours(Cell c)
 	{
-		List<Cell> neighbours = new List<Cell>(25);
+		List<Cell> neighbours = new List<Cell>(8);
 
-		for (int dx = -2; dx <= 2; dx++)
+		for (int dx = -1; dx <= 1; dx++)
 		{
-			for (int dy = -2; dy <= 2; dy++)
+			for (int dy = -1; dy <= 1; dy++)
 			{
 				if (dx != 0 || dy != 0) // Exclude the cell itself
 				{
@@ -325,9 +325,7 @@ public static class World
 				}
 			}
 		}
-		
-		if(neighbours.Count != 24)
-			throw new Exception("Neighbours count is not 24");
+
 
 		return neighbours;
 	}
