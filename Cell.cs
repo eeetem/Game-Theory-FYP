@@ -26,7 +26,7 @@ public class Cell : IComparable<Cell>
 	
 	
 	const float MutationFactor = 0.1f;
-	public const float BaseRepChange = 0.1f;
+	public const float ReputationInterpolationFactor = 0.3f;
 	const float interpolationFactor = 0.7f;
 	
 	
@@ -52,15 +52,11 @@ public class Cell : IComparable<Cell>
 		}
 		else
 		{
-			CooperationChance = 1;
+			CooperationChance = Random.Shared.NextSingle();
 		}
-			
-		
-		
-		
-		
-		if(RepEnabled)
-			ReputationFactor = (float) (Random.Shared.NextDouble() * 2 - 1.0);
+
+		if (RepEnabled)
+			ReputationFactor = 0;
 	}
 
 	public void InitiliaseRep(List<Cell> neighbours)
@@ -91,24 +87,33 @@ public class Cell : IComparable<Cell>
 		if (other is null) return 1;
 		return Score.CompareTo(other.Score);
 	}
+	public void AdjustReputation(Cell opponent, bool opponentCooperated)
+	{
+		if(!RepEnabled) return;
+		var currentRep = KnownReputations[opponent];
+		var newRep = Single.Lerp(currentRep, opponentCooperated ? 1 : 0, ReputationInterpolationFactor);
+		newRep = Single.Clamp(newRep, 0, 1);
+		KnownReputations[opponent] = newRep;
 
+	}
 	public bool CooperateOrNot(Cell oponent)
 	{
 		
 		float chance = CooperationChance;
 		if (RepEnabled)
 		{
-			if (ReputationFactor > 0)
+			var rep = 0.5f;
+			if (rep > 0)
 			{
-				chance = Single.Lerp(chance, KnownReputations[oponent], ReputationFactor);
+				chance = Single.Lerp(chance, KnownReputations[oponent], rep);
 			}
 			else
-			{
+			{ //todo stop from going too far
 				bool positiveChange = KnownReputations[oponent] - chance > 0;
 				if(positiveChange)
-					chance = Single.Lerp(chance, 0, -ReputationFactor);
+					chance = Single.Lerp(chance, 0, -rep);
 				else
-					chance = Single.Lerp(chance, 1, -ReputationFactor);
+					chance = Single.Lerp(chance, 1, -rep);
 			}
 		}
 		var val = Random.Shared.NextDouble();
@@ -140,14 +145,14 @@ public class Cell : IComparable<Cell>
 
 	public void TellReputation(Cell teller, Cell opponent, bool opponentCooperated)
 	{
-		if(!RepEnabled) return;
+		if(!ReputationTelling) return;
 		
 		if(!KnownReputations.ContainsKey(opponent)) return;
 		var trust = _trust[teller];
-		var changeMagnitude = opponentCooperated ? BaseRepChange : -BaseRepChange;
-	//	changeMagnitude *= trust;
-		KnownReputations[opponent] += changeMagnitude;
-		KnownReputations[opponent] = Math.Clamp(KnownReputations[opponent], -1, 1);
+	//	var changeMagnitude = opponentCooperated ? BaseRepChange : -BaseRepChange;
+	///	changeMagnitude *= trust;
+		//KnownReputations[opponent] += changeMagnitude;
+		//KnownReputations[opponent] = Math.Clamp(KnownReputations[opponent], -1, 1);
 		
 	}
 

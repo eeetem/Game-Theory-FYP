@@ -105,9 +105,7 @@ public static class World
 		{
 			GetCellUnderMouse(mstate).CooperationChance = 0;
 		}
-
-
-
+		
 		lastmousestate = mstate;
 		lastkeyboardstate = kstate;
 	}
@@ -189,6 +187,7 @@ public static class World
 		public int CoopGames { get; set; }
 		public int BetrayedGames { get; set; }
 		public int DefectedGames { get; set; }
+		public float AvgRep { get; set; }
 	}
 	private static List<Details> detailsList = new List<Details>();
 
@@ -197,6 +196,7 @@ public static class World
 		//calculate average coopratation, score, reputation
 		float avgCoopfactor = 0;
 		float avgRepFactor = 0;
+		float avgRep = 0;
 		float avgScore = 0;
 
 		foreach (var c in grid)
@@ -204,14 +204,22 @@ public static class World
 			avgCoopfactor += c.CooperationChance;
 			avgRepFactor += c.ReputationFactor;
 			avgScore += c.Score;
+
+			float avgRepForCell = c.KnownReputations.Values.Sum();
+			avgRepForCell /= c.KnownReputations.Count;
+			avgRep += avgRepForCell;
+
+
 		}
-		
-		avgCoopfactor /= grid.Size * grid.Size;
-		avgRepFactor /= grid.Size * grid.Size;
-		avgScore /= grid.Size * grid.Size;
+		var total = grid.Size * grid.Size;
+		avgCoopfactor /= total;
+		avgRepFactor /= total;
+		avgScore /= total;
+		avgRep /= total;
 		
 		Console.WriteLine("Average Cooperation Factor: " + avgCoopfactor);
 		Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
+		Console.WriteLine("Average Reputation: " + avgRep);
 		Console.WriteLine("Average Score: " + avgScore);
 		Console.WriteLine("Total Games: " + totalGames );
 		detailsList.Add(new Details
@@ -222,29 +230,32 @@ public static class World
 			Generation = Generation,
 			CoopGames = gamesCooped,
 			BetrayedGames = gamesBetrayed,
-			DefectedGames = gamesDefected
-			
+			DefectedGames = gamesDefected,
+			AvgRep = avgRep*100,
 		});
 	}
 
 	public static void DrawGraph()
 {
-    var plotModel1 = new PlotModel { Title = "Continuous Strategy Cooperative Start" };
+    var plotModel1 = new PlotModel { Title = "Reputation Enabled Random Start" };
 
     var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
     var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
     var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle , Color = OxyColors.Red};
+    var avgRepSeries = new LineSeries { Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple};
 
     foreach (var detail in detailsList)
     {
         avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
-      //  avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
+        avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
         avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
+        avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
     }
 
     plotModel1.Series.Add(avgCoopSeries);
-  //plotModel1.Series.Add(avgRepFactorSeries);
-    plotModel1.Series.Add(avgScoreSeries);
+	plotModel1.Series.Add(avgRepFactorSeries);
+	plotModel1.Series.Add(avgScoreSeries);
+	plotModel1.Series.Add(avgRepSeries);
 
     plotModel1.IsLegendVisible = true;
     var legend1 = new Legend
@@ -263,7 +274,7 @@ public static class World
         File.WriteAllBytes("plot1.png", stream.ToArray());
     }
 
-    var plotModel2 = new PlotModel { Title = "Continuous Strategy Cooperative Start" };
+    var plotModel2 = new PlotModel { Title = "Reputation Enabled Random Start" };
 
     var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
     var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
@@ -335,6 +346,7 @@ public static class World
 		gamesDefected = 0;
 		gamesBetrayed = 0;
 		totalGames = 0;
+		
 		Parallel.ForEach(grid, c =>
 		{
 			c.Score = 0;
@@ -391,23 +403,17 @@ public static class World
 					Interlocked.Add(ref a.Score, 3);
 					Interlocked.Add(ref b.Score, 3);
 					Interlocked.Increment(ref gamesCooped);
-					
-					a.KnownReputations[b] += Cell.BaseRepChange;
-					b.KnownReputations[a] += Cell.BaseRepChange;
+		
 				}else if (aCooperate && !bCooperate)
 				{
 					Interlocked.Add(ref b.Score, 5);
 					Interlocked.Increment(ref gamesBetrayed);
-
-					a.KnownReputations[b] -= Cell.BaseRepChange;
-					b.KnownReputations[a] += Cell.BaseRepChange;
+					
 				}
 				else if (bCooperate && !aCooperate)
 				{
 					Interlocked.Add(ref a.Score, 5);
 					Interlocked.Increment(ref gamesBetrayed);
-					a.KnownReputations[b] += Cell.BaseRepChange;
-					b.KnownReputations[a] -= Cell.BaseRepChange;
 				}
 				else
 				{
@@ -415,11 +421,10 @@ public static class World
 					Interlocked.Add(ref a.Score, 1);
 					Interlocked.Add(ref b.Score, 1);
 					Interlocked.Increment(ref gamesDefected);
-
-					a.KnownReputations[b] -= Cell.BaseRepChange;
-					b.KnownReputations[a] -= Cell.BaseRepChange;
 				}
 
+				a.AdjustReputation(b, bCooperate);
+				b.AdjustReputation(a, aCooperate);
 				if (!a.AlreadyPlayed.TryAdd(b,(aCooperate, bCooperate)))
 				{
 					throw new Exception("Played Game With Already Played");
@@ -433,13 +438,7 @@ public static class World
 	}
 	private static Cell GetCellUnderMouse(MouseState mstate)
 	{
-		// Get the camera bounding rectangle
-		var cameraBoundingRectangle = Camera.GetBoundingRectangle();
 		float gridSize = 50f; // Adjust according to your cell size
-
-		// Get the top-left corner of the visible area in the world space
-		Vector2 cameraTopLeft = cameraBoundingRectangle.TopLeft;
-
 		// Get the mouse position in screen space
 		Vector2 mousePosition = new Vector2(mstate.X, mstate.Y);
 
@@ -465,7 +464,7 @@ public static class World
 			c.CacheStrategy();
 		});
 
-		Parallel.For(0, (grid.Size*grid.Size)/2, i =>
+		Parallel.For(0, (grid.Size*grid.Size), i =>
 		{
 			//pick random cell
 			var c = grid.GetElement(Random.Shared.Next(grid.Size),Random.Shared.Next(grid.Size));
@@ -474,7 +473,7 @@ public static class World
 			var random = Random.Shared.Next(neighr.Count);
 			var neig = neighr[random];
 
-			float temp = 1;
+			float temp = 0.1f;
 			double prob = 1 / (Math.Pow(Math.E, -temp*(neig.Score - c.Score)));
 			if (Random.Shared.NextDouble() < prob)
 			{
@@ -558,10 +557,10 @@ public static class World
 					(int)(HighletCellDrawpos.Y + relativePos.Y * gridSize + (gridSize - smallerSize) / 2),
 					smallerSize, smallerSize), Color.White);
 
-				if (neighbor.AlreadyPlayed.ContainsKey(HighlightedCell))
+				if (neighbor.AlreadyPlayed.TryGetValue(HighlightedCell, out var value))
 				{
 					// Draw two smaller rectangles side by side
-					if (neighbor.AlreadyPlayed[HighlightedCell].Item2)
+					if (value.Item2)
 					{
 						spriteBatch.FillRectangle(new Rectangle(
 							(int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - innerSize) / 2),
@@ -581,10 +580,10 @@ public static class World
 
 				}
 
-				if (HighlightedCell.AlreadyPlayed.ContainsKey(neighbor))
+				if (HighlightedCell.AlreadyPlayed.TryGetValue(neighbor, out var value1))
 				{
 					// Draw two smaller rectangles side by side
-					if (HighlightedCell.AlreadyPlayed[neighbor].Item2)
+					if (value1.Item2)
 					{
 						spriteBatch.FillRectangle(new Rectangle(
 							(int)(HighletCellDrawpos.X + relativePos.X * gridSize + (gridSize - innerSize) / 2 + halfInnerSize),
@@ -605,11 +604,8 @@ public static class World
 				}
 				
 				// Draw reputation value
-				if (HighlightedCell.KnownReputations.ContainsKey(neighbor))
+				if (HighlightedCell.KnownReputations.TryGetValue(neighbor, out float reputation))
 				{
-					
-					float reputation = HighlightedCell.KnownReputations[neighbor];
-					
 					// Normalize the reputation value from [-1, 1] to [0, 1]
 					float normalizedReputation = (reputation + 1) / 2;
 
