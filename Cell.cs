@@ -31,8 +31,10 @@ public class Cell : IComparable<Cell>
 	
 	
 	public const bool RepEnabled = true;
+	public const bool EvolveRep = true;
 	public const bool DiscreteStrategy = false;
 	public const bool ReputationTelling = RepEnabled && false;
+	public const bool NoRandomCooperate = true;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
 	readonly ConcurrentDictionary<Cell,float> _trust = new ConcurrentDictionary<Cell, float>();
@@ -56,7 +58,7 @@ public class Cell : IComparable<Cell>
 		}
 
 		if (RepEnabled)
-			ReputationFactor = 0;
+			ReputationFactor = Random.Shared.NextSingle();
 	}
 
 	public void InitiliaseRep(List<Cell> neighbours)
@@ -102,10 +104,10 @@ public class Cell : IComparable<Cell>
 		float chance = CooperationChance;
 		if (RepEnabled)
 		{
-			var repfactor = 0.5f;
-			if (repfactor > 0)
+			
+			if (ReputationFactor > 0)
 			{
-				chance = Single.Lerp(chance, KnownReputations[oponent], repfactor);
+				chance = Single.Lerp(chance, KnownReputations[oponent], ReputationFactor);
 			}
 			else
 			{ //todo stop from going too far
@@ -116,11 +118,14 @@ public class Cell : IComparable<Cell>
 				if(targetDist > maxDist)
 					 negativeTarget = chance + (positiveChangeForRep ? -maxDist : maxDist);
 				
-				chance = Single.Lerp(chance, negativeTarget, -repfactor);
+				chance = Single.Lerp(chance, negativeTarget, -ReputationFactor);
 			
 			}
 		}
-		var val = Random.Shared.NextDouble();
+
+		float val = 0.5f;
+		if(!NoRandomCooperate)
+			val = Random.Shared.NextSingle();
 		return val < chance;
 	}
 
@@ -139,7 +144,7 @@ public class Cell : IComparable<Cell>
 		}
 	
 		
-		if(!RepEnabled) return;
+		if(!RepEnabled || !EvolveRep) return;
 		
 		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, interpolationFactor);
 		ReputationFactor += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;

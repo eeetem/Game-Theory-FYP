@@ -237,7 +237,7 @@ public static class World
 
 	public static void DrawGraph()
 {
-    var plotModel1 = new PlotModel { Title = "Reputation Enabled Random Start" };
+    var plotModel1 = new PlotModel { Title = "Continuous Strategy Without Randomness" };
 
     var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
     var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
@@ -274,7 +274,7 @@ public static class World
         File.WriteAllBytes("plot1.png", stream.ToArray());
     }
 
-    var plotModel2 = new PlotModel { Title = "Reputation Enabled Random Start" };
+    var plotModel2 = new PlotModel { Title = "Continuous Strategy Without Randomness" };
 
     var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
     var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
@@ -308,13 +308,15 @@ public static class World
         File.WriteAllBytes("plot2.png", stream.ToArray());
     }
 }
+	
+	const int NeighbourhoodSize = 1;
 	public static List<Cell> GetCellNeighbours(Cell c)
 	{
 		List<Cell> neighbours = new List<Cell>(8);
 
-		for (int dx = -1; dx <= 1; dx++)
+		for (int dx = -NeighbourhoodSize; dx <= NeighbourhoodSize; dx++)
 		{
-			for (int dy = -1; dy <= 1; dy++)
+			for (int dy = -NeighbourhoodSize; dy <= NeighbourhoodSize; dy++)
 			{
 				if (dx != 0 || dy != 0) // Exclude the cell itself
 				{
