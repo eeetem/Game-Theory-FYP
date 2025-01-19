@@ -109,7 +109,7 @@ public class Cell : IComparable<Cell>
 				chance = Single.Lerp(chance, KnownReputations[oponent], ReputationFactor);
 			}
 			else
-			{ //todo stop from going too far
+			{
 				bool positiveChangeForRep = KnownReputations[oponent] - chance > 0;
 				float negativeTarget = positiveChangeForRep ? 0 : 1;
 				float maxDist = Math.Abs(chance -  KnownReputations[oponent]);
