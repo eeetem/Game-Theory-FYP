@@ -29,7 +29,6 @@ public static class World
 	private enum GameState
 	{
 		PlayGames,
-		AnnounceReputation,
 		AdjustStrategy
 	}
 	public static void Init()
@@ -129,10 +128,6 @@ public static class World
 						Console.WriteLine("Playing Games");
 						PlayGames();
 						break;
-					case GameState.AnnounceReputation:
-						Console.WriteLine("Announceing Reputation");
-						AnnounceReputation();
-						break;
 					case GameState.AdjustStrategy:
 						Console.WriteLine("Adjusting Strategy");
 						AdjustStrategy();
@@ -146,37 +141,7 @@ public static class World
 		t.Start();
 	}
 
-	private static void AnnounceReputation()
-	{
 
-		if (!Cell.ReputationTelling)
-		{
-			currentState = GameState.AdjustStrategy;
-			return;
-		}
-		Parallel.ForEach(grid, c =>
-		{
-			c.CacheTrust();
-		});
-		Parallel.ForEach(grid,c =>
-		{
-			var neighours = GetCellNeighbours(c);
-			foreach (var neighour in neighours)
-			{
-				foreach (var opponent in c.AlreadyPlayed)
-				{
-					if (opponent.Key == neighour)
-					{
-						continue;
-					}
-
-					neighour.TellReputation(c, opponent.Key, opponent.Value.Item2);
-				}
-			}
-
-		});
-		currentState = GameState.AdjustStrategy;
-	}
 	
 	public class Details
 	{
@@ -370,7 +335,7 @@ public static class World
 		{
 			c.CalcCoopPercent();
 		});
-		currentState = GameState.AnnounceReputation;
+		currentState = GameState.PlayGames;
 	}
 
 	private static void PlayGame(Cell a, Cell b)

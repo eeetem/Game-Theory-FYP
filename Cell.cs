@@ -33,7 +33,6 @@ public class Cell : IComparable<Cell>
 	public const bool RepEnabled = true;
 	public const bool EvolveRep = true;
 	public const bool DiscreteStrategy = false;
-	public const bool ReputationTelling = RepEnabled && false;
 	public const bool NoRandomCooperate = true;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
@@ -152,18 +151,7 @@ public class Cell : IComparable<Cell>
 	
 	}
 
-	public void TellReputation(Cell teller, Cell opponent, bool opponentCooperated)
-	{
-		if(!ReputationTelling) return;
-		
-		if(!KnownReputations.ContainsKey(opponent)) return;
-		var trust = _trust[teller];
-	//	var changeMagnitude = opponentCooperated ? BaseRepChange : -BaseRepChange;
-	///	changeMagnitude *= trust;
-		//KnownReputations[opponent] += changeMagnitude;
-		//KnownReputations[opponent] = Math.Clamp(KnownReputations[opponent], -1, 1);
-		
-	}
+
 
 	public void CacheTrust()
 	{
