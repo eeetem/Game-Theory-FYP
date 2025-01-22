@@ -335,7 +335,7 @@ public static class World
 		{
 			c.CalcCoopPercent();
 		});
-		currentState = GameState.PlayGames;
+		currentState = GameState.AdjustStrategy;
 	}
 
 	private static void PlayGame(Cell a, Cell b)
