@@ -20,24 +20,19 @@ public class Cell : IComparable<Cell>
 	
 	public float CooperationChanceCache = 0f;
 	public float ReputationFactorCache  = 0f;
-	
-	
 
-	
-	
-	const float MutationFactor = 0.1f;
+
+	private const float MutationFactor = 0.1f;
 	public const float ReputationInterpolationFactor = 0.3f;
-	const float interpolationFactor = 0.7f;
+	private const float interpolationFactor = 0.7f;
 	
 	
 	public const bool RepEnabled = true;
 	public const bool EvolveRep = true;
 	public const bool DiscreteStrategy = false;
-	public const bool NoRandomCooperate = true;
+	public const bool NoRandomCooperate = false;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
-	readonly ConcurrentDictionary<Cell,float> _trust = new ConcurrentDictionary<Cell, float>();
-
 
 	public object lockObject = new object();
 
@@ -153,22 +148,15 @@ public class Cell : IComparable<Cell>
 
 
 
-	public void CacheTrust()
-	{
-		_trust.Clear();
-		foreach (var kvp in KnownReputations)
-		{
-			_trust.TryAdd(kvp.Key, kvp.Value);
-		}
-	}
+
 
 	public void CacheStrategy()
 	{
 		CooperationChanceCache = CooperationChance;
 		ReputationFactorCache = ReputationFactor;
 	}
-	
-	float coopPercent = 0.5f;
+
+	private float coopPercent = 0.5f;
 	public void CalcCoopPercent()
 	{
 		int cooped = 0;
