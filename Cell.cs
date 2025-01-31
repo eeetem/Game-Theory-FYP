@@ -23,14 +23,15 @@ public class Cell : IComparable<Cell>
 
 
 	private const float MutationFactor = 0.1f;
-	public const float ReputationInterpolationFactor = 0.3f;
 	private const float interpolationFactor = 0.7f;
 	
 	
-	public const bool RepEnabled = true;
+	public const float ReputationInterpolationFactor = 0.3f;
+	
+	public const bool RepEnabled = false;
 	public const bool EvolveRep = true;
 	public const bool DiscreteStrategy = false;
-	public const bool NoRandomCooperate = false;
+	public const bool NoRandomCooperate = true;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
 
