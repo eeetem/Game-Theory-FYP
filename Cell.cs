@@ -25,12 +25,12 @@ public class Cell : IComparable<Cell>
 
 	
 	
-	const float MutationFactor = 0.1f;
+	const float MutationFactor = 0.05f;
 	public const float ReputationInterpolationFactor = 0.3f;
 	const float interpolationFactor = 0.7f;
 	
 	
-	public const bool RepEnabled = true;
+	public const bool RepEnabled = false;
 	public const bool EvolveRep = true;
 	public const bool DiscreteStrategy = false;
 	public const bool NoRandomCooperate = true;
@@ -67,10 +67,15 @@ public class Cell : IComparable<Cell>
 			KnownReputations.TryAdd(n, 0.5f);
 		}
 	}
-
+	public int GamesThisGeneration = 0;
+	public int CoopThisGeneration = 0;
+	private Color lastC = Color.Black;
 	public Color GetColor()
 	{
-		return new Color(1-coopPercent, coopPercent, 0);
+		if(GamesThisGeneration == 0) return lastC;
+		float coopPercent = CoopThisGeneration / (float)GamesThisGeneration;
+		lastC = new Color(1-coopPercent, coopPercent, 0);
+		return lastC;
 	}
 	public Color GetColorOutline()
 	{
@@ -122,15 +127,18 @@ public class Cell : IComparable<Cell>
 			}
 		}
 
+		
 		float val = 0.5f;
 		if(!NoRandomCooperate)
 			val = Random.Shared.NextSingle();
 		return val < chance;
 	}
 
+	public bool CanEvolve = true;
 	public void UpdateStrategy(Cell candidate)
 	{
-
+		if (!CanEvolve) return;
+		CanEvolve = false;
 		if (DiscreteStrategy)
 		{
 			CooperationChance = candidate.CooperationChanceCache;
@@ -151,16 +159,7 @@ public class Cell : IComparable<Cell>
 	
 	}
 
-
-
-	public void CacheTrust()
-	{
-		_trust.Clear();
-		foreach (var kvp in KnownReputations)
-		{
-			_trust.TryAdd(kvp.Key, kvp.Value);
-		}
-	}
+	
 
 	public void CacheStrategy()
 	{
@@ -168,17 +167,5 @@ public class Cell : IComparable<Cell>
 		ReputationFactorCache = ReputationFactor;
 	}
 	
-	float coopPercent = 0.5f;
-	public void CalcCoopPercent()
-	{
-		int cooped = 0;
-		foreach (var cell in new ConcurrentDictionary<Cell, (bool,bool)>(AlreadyPlayed))
-		{
-			if (cell.Value.Item1)
-			{
-				cooped++;
-			}
-		}
-		coopPercent = cooped / (float) AlreadyPlayed.Count;
-	}
+
 }

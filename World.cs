@@ -301,7 +301,8 @@ public static class World
 	static int gamesDefected = 0;
 	static int gamesBetrayed = 0;
 	static int totalGames = 0;
-	private static object countLock = new object();
+	
+	const int GamesPerGeneration = 25;
 	public static void PlayGames()
 	{
 		Console.WriteLine("Generation: "+Generation);
@@ -316,25 +317,30 @@ public static class World
 		{
 			c.Score = 0;
 			c.AlreadyPlayed.Clear();
+			c.GamesThisGeneration=0;
+			c.CoopThisGeneration = 0;
 		});
 		
-		int cellsAccounted = 0;
-		var res = Parallel.ForEach(grid, c =>
+		for (int i = 0; i < GamesPerGeneration; i++)
 		{
-			Interlocked.Increment(ref cellsAccounted);	
-			var neig = GetCellNeighbours(c);
-			foreach (var n in neig)
+			Parallel.ForEach(grid, c =>
 			{
-				PlayGame(c,n);
-			}
-		});
-		if(cellsAccounted != grid.Size*grid.Size)
-			throw new Exception("Cells Accounted is not equal to grid size");
+				c.AlreadyPlayed.Clear();
+			});
+			Parallel.ForEach(grid, c =>
+			{
+				
+				var neig = GetCellNeighbours(c);
+				foreach (var n in neig)
+				{
+					PlayGame(c,n);
+				}
+			});
+		
+		}
 
-		Parallel.ForEach(grid, c =>
-		{
-			c.CalcCoopPercent();
-		});
+
+
 		currentState = GameState.AdjustStrategy;
 	}
 
@@ -390,6 +396,16 @@ public static class World
 
 				a.AdjustReputation(b, bCooperate);
 				b.AdjustReputation(a, aCooperate);
+				Interlocked.Increment(ref a.GamesThisGeneration);
+				Interlocked.Increment(ref b.GamesThisGeneration);
+				if (aCooperate)
+				{
+					Interlocked.Increment(ref a.CoopThisGeneration);
+				}
+				if (bCooperate)
+				{
+					Interlocked.Increment(ref b.CoopThisGeneration);
+				}
 				if (!a.AlreadyPlayed.TryAdd(b,(aCooperate, bCooperate)))
 				{
 					throw new Exception("Played Game With Already Played");
@@ -427,6 +443,7 @@ public static class World
 		Parallel.ForEach(grid, c =>
 		{
 			c.CacheStrategy();
+			c.CanEvolve = true;
 		});
 
 		Parallel.For(0, (grid.Size*grid.Size), i =>
@@ -439,7 +456,7 @@ public static class World
 			var neig = neighr[random];
 
 			float temp = 0.1f;
-			double prob = 1 / (Math.Pow(Math.E, -temp*(neig.Score - c.Score)));
+			double prob = 1 / (Math.Pow(Math.E, -temp*(neig.Score - c.Score))+1);
 			if (Random.Shared.NextDouble() < prob)
 			{
 				c.UpdateStrategy(neig);//cell can copy multiple cells in 1 go?
