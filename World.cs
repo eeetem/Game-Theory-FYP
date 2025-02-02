@@ -302,7 +302,7 @@ public static class World
 	static int gamesBetrayed = 0;
 	static int totalGames = 0;
 	
-	const int GamesPerGeneration = 25;
+	const int GamesPerGeneration = 1;
 	public static void PlayGames()
 	{
 		Console.WriteLine("Generation: "+Generation);
