@@ -185,6 +185,8 @@ public static class World
 		Console.WriteLine("Average Cooperation Factor: " + avgCoopfactor);
 		Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
 		Console.WriteLine("Average Reputation: " + avgRep);
+		if(gamesBetrayed!=0)
+			 Console.WriteLine("Percentage Cooperative Actions: " + (gamesCooped +gamesBetrayed)/ (float)(gamesCooped+gamesBetrayed+gamesDefected));
 		Console.WriteLine("Average Score: " + avgScore);
 		Console.WriteLine("Total Games: " + totalGames );
 		detailsList.Add(new Details
