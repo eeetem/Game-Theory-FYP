@@ -23,11 +23,11 @@ public class Cell : IComparable<Cell>
 
 
 	private const float MutationFactor = 0.1f;
-	private const float interpolationFactor = 0.7f;
+	private const float EvolutionInterpolationFactor = 0.7f;
 	public const float ReputationInterpolationFactor = 0.3f;
 	
 	
-	public const bool RepEnabled = false;
+	public const bool RepEnabled = true;
 	public const bool EvolveRep = true;
 	public const bool DiscreteStrategy = false;
 	public const bool NoRandomCooperate = true;
@@ -52,7 +52,7 @@ public class Cell : IComparable<Cell>
 		}
 
 		if (RepEnabled)
-			ReputationFactor = Random.Shared.NextSingle();
+			ReputationFactor = Random.Shared.NextSingle() * 2 - 1;
 	}
 
 	public void InitiliaseRep(List<Cell> neighbours)
@@ -140,15 +140,16 @@ public class Cell : IComparable<Cell>
 		}
 		else
 		{
-			CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, interpolationFactor);
+			CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, EvolutionInterpolationFactor);
 			CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
 			CooperationChance = Math.Clamp(CooperationChance, 0, 1);
+			
 		}
 	
 		
 		if(!RepEnabled || !EvolveRep) return;
 		
-		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, interpolationFactor);
+		ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, EvolutionInterpolationFactor);
 		ReputationFactor += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
 		ReputationFactor = Math.Clamp(ReputationFactor, -1, 1);
 	

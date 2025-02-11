@@ -204,25 +204,25 @@ public static class World
 
 	public static void DrawGraph()
 {
-    var plotModel1 = new PlotModel { Title = "Continuous Strategy Without Randomness" };
+    var plotModel1 = new PlotModel { };
 
     var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
-    var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
+   // var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
     var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle , Color = OxyColors.Red};
-    var avgRepSeries = new LineSeries { Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple};
+  //  var avgRepSeries = new LineSeries { Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple};
 
     foreach (var detail in detailsList)
     {
         avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
-        avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
+   //     avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
         avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
-        avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
+    //    avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
     }
 
     plotModel1.Series.Add(avgCoopSeries);
-	plotModel1.Series.Add(avgRepFactorSeries);
+	//plotModel1.Series.Add(avgRepFactorSeries);
 	plotModel1.Series.Add(avgScoreSeries);
-	plotModel1.Series.Add(avgRepSeries);
+	//plotModel1.Series.Add(avgRepSeries);
 
     plotModel1.IsLegendVisible = true;
     var legend1 = new Legend
@@ -241,7 +241,7 @@ public static class World
         File.WriteAllBytes("plot1.png", stream.ToArray());
     }
 
-    var plotModel2 = new PlotModel { Title = "Continuous Strategy Without Randomness" };
+    var plotModel2 = new PlotModel { };
 
     var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
     var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
