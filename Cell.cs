@@ -27,8 +27,8 @@ public class Cell : IComparable<Cell>
 	public const float ReputationInterpolationFactor = 0.3f;
 	
 	
-	public const bool RepEnabled = false;
-	public const bool EvolveRep = true;
+	public const bool RepEnabled = true;
+	public const bool EvolveRep = false;
 	public const bool DiscreteStrategy = false;
 	public const bool NoRandomCooperate = true;
 
@@ -52,7 +52,7 @@ public class Cell : IComparable<Cell>
 		}
 
 		if (RepEnabled)
-			ReputationFactor = Random.Shared.NextSingle();
+			ReputationFactor = 0.75f;
 	}
 
 	public void InitiliaseRep(List<Cell> neighbours)
