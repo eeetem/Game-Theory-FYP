@@ -25,29 +25,33 @@ public static class World
 	private static GameState currentState = GameState.PlayGames;
 	private static KeyboardState lastkeyboardstate;
 	private static MouseState lastmousestate;
-	
+	public static SimulationParameters CurrentParams;
+	public static  bool runSimulation = true;
 	private enum GameState
 	{
 		PlayGames,
 		AdjustStrategy
 	}
-	public static void Init()
+	public static void Init(SimulationParameters parameters)
 	{
-
+		Generation = 0;
+		detailsList.Clear();
+		pause = false;
+		CurrentParams = parameters;
 		grid = new WrappedGrid<Cell>(100);
 		for (int x = 0; x < grid.Size; x++)
 		{
 			for (int y = 0; y < grid.Size; y++)
 			{
-				grid.InternalGrid[x, y] = new Cell(new Point(x,y));
+				grid.InternalGrid[x, y] = new Cell(new Point(x, y));
 			}
 		}
-		
+
 		for (int x = 0; x < grid.Size; x++)
 		{
 			for (int y = 0; y < grid.Size; y++)
 			{
-				var c = grid.GetElement(x,y);
+				var c = grid.GetElement(x, y);
 				c.InitiliaseRep(GetCellNeighbours(c));
 			}
 		}
@@ -72,6 +76,13 @@ public static class World
 			{
 				Tick();
 				msTimeTillTick = 10;
+			}
+			if(CurrentParams.Generations != 0 && Generation >= CurrentParams.Generations)
+			{
+				pause = true;
+				DrawGraph();
+				PrintDetails();
+				End();
 			}
 		}
 		if(!Game1.instance.IsActive) return;
@@ -107,9 +118,20 @@ public static class World
 		
 		lastmousestate = mstate;
 		lastkeyboardstate = kstate;
+	
 	}
-	
-	
+
+	private static void End()
+	{
+		pause = true;
+		CurrentParams.RaiseOnSimulationEnd(detailsList);
+		if (CurrentParams.NextSimulation != null)
+		{
+			Init(CurrentParams.NextSimulation);
+		}
+	}
+
+
 	private static object lockObject = new object();
 	private static bool tickProcessing = false;
 
@@ -186,7 +208,7 @@ public static class World
 		Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
 		Console.WriteLine("Average Reputation: " + avgRep);
 		if(gamesBetrayed!=0)
-			 Console.WriteLine("Percentage Cooperative Actions: " + (gamesCooped +gamesBetrayed)/ (float)(gamesCooped+gamesBetrayed+gamesDefected));
+			Console.WriteLine("Percentage Cooperative Actions: " + (gamesCooped +gamesBetrayed)/ (float)(gamesCooped+gamesBetrayed+gamesDefected));
 		Console.WriteLine("Average Score: " + avgScore);
 		Console.WriteLine("Total Games: " + totalGames );
 		detailsList.Add(new Details
@@ -203,78 +225,89 @@ public static class World
 	}
 
 	public static void DrawGraph()
-{
-    var plotModel1 = new PlotModel { };
+	{
+		string title = GenerateTitle();
+		var plotModel1 = new PlotModel { Title = title};
 
-    var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
-   // var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
-    var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle , Color = OxyColors.Red};
-  //  var avgRepSeries = new LineSeries { Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple};
+		var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle };
+		// var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle };
+		var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle , Color = OxyColors.Red};
+		var avgRepSeries = new LineSeries { Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple};
 
-    foreach (var detail in detailsList)
-    {
-        avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
-   //     avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
-        avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
-    //    avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
-    }
+		foreach (var detail in detailsList)
+		{
+			avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
+			//     avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
+			avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
+			avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
+		}
 
-    plotModel1.Series.Add(avgCoopSeries);
-	//plotModel1.Series.Add(avgRepFactorSeries);
-	plotModel1.Series.Add(avgScoreSeries);
-	//plotModel1.Series.Add(avgRepSeries);
+		plotModel1.Series.Add(avgCoopSeries);
+		//plotModel1.Series.Add(avgRepFactorSeries);
+		plotModel1.Series.Add(avgScoreSeries);
+		plotModel1.Series.Add(avgRepSeries);
 
-    plotModel1.IsLegendVisible = true;
-    var legend1 = new Legend
-    {
-        LegendPosition = LegendPosition.TopRight,
-        LegendPlacement = LegendPlacement.Outside,
-        LegendOrientation = LegendOrientation.Horizontal,
-        LegendBorderThickness = 5
-    };
-    plotModel1.Legends.Add(legend1);
+		plotModel1.IsLegendVisible = true;
+		var legend1 = new Legend
+		{
+			LegendPosition = LegendPosition.TopRight,
+			LegendPlacement = LegendPlacement.Outside,
+			LegendOrientation = LegendOrientation.Horizontal,
+			LegendBorderThickness = 5
+		};
+		plotModel1.Legends.Add(legend1);
+		string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+		string fileName1 = $"plot1_{timestamp}.png";
+		using (var stream = new MemoryStream())
+		{
+			var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+			pngExporter.Export(plotModel1, stream);
+			File.WriteAllBytes(fileName1, stream.ToArray());
+		}
 
-    using (var stream = new MemoryStream())
-    {
-        var pngExporter = new PngExporter { Width = 1280, Height = 720 };
-        pngExporter.Export(plotModel1, stream);
-        File.WriteAllBytes("plot1.png", stream.ToArray());
-    }
+		var plotModel2 = new PlotModel { Title = title };
 
-    var plotModel2 = new PlotModel { };
 
-    var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
-    var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
-    var defectedGamesSeries = new LineSeries { Title = "Mutual Defected Games", MarkerType = MarkerType.Circle, Color = OxyColors.Orange};
+		var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
+		var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
+		var defectedGamesSeries = new LineSeries { Title = "Mutual Defected Games", MarkerType = MarkerType.Circle, Color = OxyColors.Orange};
 
-    foreach (var detail in detailsList)
-    {
-        coopGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.CoopGames));
-        betrayedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.BetrayedGames));
-        defectedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.DefectedGames));
-    }
+		foreach (var detail in detailsList)
+		{
+			coopGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.CoopGames));
+			betrayedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.BetrayedGames));
+			defectedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.DefectedGames));
+		}
 
-    plotModel2.Series.Add(coopGamesSeries);
-    plotModel2.Series.Add(betrayedGamesSeries);
-    plotModel2.Series.Add(defectedGamesSeries);
+		plotModel2.Series.Add(coopGamesSeries);
+		plotModel2.Series.Add(betrayedGamesSeries);
+		plotModel2.Series.Add(defectedGamesSeries);
 
-    plotModel2.IsLegendVisible = true;
-    var legend2 = new Legend
-    {
-        LegendPosition = LegendPosition.TopRight,
-        LegendPlacement = LegendPlacement.Outside,
-        LegendOrientation = LegendOrientation.Horizontal,
-        LegendBorderThickness = 5
-    };
-    plotModel2.Legends.Add(legend2);
+		plotModel2.IsLegendVisible = true;
+		var legend2 = new Legend
+		{
+			LegendPosition = LegendPosition.TopRight,
+			LegendPlacement = LegendPlacement.Outside,
+			LegendOrientation = LegendOrientation.Horizontal,
+			LegendBorderThickness = 5
+		};
+		plotModel2.Legends.Add(legend2);
 
-    using (var stream = new MemoryStream())
-    {
-        var pngExporter = new PngExporter { Width = 1280, Height = 720 };
-        pngExporter.Export(plotModel2, stream);
-        File.WriteAllBytes("plot2.png", stream.ToArray());
-    }
-}
+    
+		string fileName2 = $"plot2_{timestamp}.png";
+
+		using (var stream = new MemoryStream())
+		{
+			var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+			pngExporter.Export(plotModel2, stream);
+			File.WriteAllBytes(fileName2, stream.ToArray());
+		}
+	}
+	private static string GenerateTitle()
+	{
+		// Round the float values to 2 decimal places
+		return $"Simulation - GlobalRepFactor: {CurrentParams.GlobalRepFactor.ToString("0.00")}, GlobalRepInterpolationFactor: {CurrentParams.GlobalRepInterpolationFactor.ToString("0.00")}, Generations: {CurrentParams.Generations}";
+	}
 	
 	const int NeighbourhoodSize = 1;
 	public static List<Cell> GetCellNeighbours(Cell c)
@@ -431,7 +464,7 @@ public static class World
 		// Calculate the cell coordinates
 		int cellX = (int)((worldMousePosition.X) / gridSize);
 		int cellY = (int)((worldMousePosition.Y ) / gridSize);
-	//	Console.WriteLine(cellX + " " + cellY);
+		//	Console.WriteLine(cellX + " " + cellY);
 
 
 		// Get the cell from the grid
@@ -468,6 +501,9 @@ public static class World
 
 		currentState = GameState.PlayGames;
 	}
+
+
+	
 	public static void Draw(SpriteBatch spriteBatch, GameTime gameTime)
 	{
 		spriteBatch.Begin(transformMatrix: Camera.GetViewMatrix(), samplerState: SamplerState.PointClamp);
@@ -607,4 +643,19 @@ public static class World
 		spriteBatch.End();
 	}
 
+}
+
+public class SimulationParameters
+{
+	public bool RepEnabled = true;
+	public float GlobalRepFactor = 0.5f;
+	public float GlobalRepInterpolationFactor = 0.5f;
+	public int Generations = 500;
+	public SimulationParameters NextSimulation;
+	public event EventHandler<List<World.Details>> OnSimulationEnd;
+
+	public void RaiseOnSimulationEnd(List<World.Details> details)
+	{
+		OnSimulationEnd?.Invoke(this, details);
+	}
 }
