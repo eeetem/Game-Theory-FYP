@@ -27,6 +27,8 @@ public class Cell : IComparable<Cell>
 
 	private const float MutationFactor = 0.1f;
 	private const float EvolutionInterpolationFactor = 0.7f;
+
+
 	public const bool EvolveRep = false;
 	public const bool DiscreteStrategy = false;
 	public const bool NoRandomCooperate = true;
@@ -56,6 +58,7 @@ public class Cell : IComparable<Cell>
 			ReputationFactor = World.CurrentParams.GlobalRepFactor;
 		
 		ReputationInterpolationFactor = World.CurrentParams.GlobalRepInterpolationFactor;
+
 	}
 
 	public void InitiliaseRep(List<Cell> neighbours)
