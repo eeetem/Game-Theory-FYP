@@ -40,12 +40,12 @@ public class Game1 : Game
 		
 		SimulationParameters p = new SimulationParameters
 		{
-			GlobalRepFactor = 0.3f,
+			GlobalRepFactor = -10f,
 			RepEnabled = true,
-			EvolveRep = false,
+			EvolveRep = true,
 			GlobalRepInterpolationFactor = -10f,
 			EvolveInterpolation = true,
-			Generations = -1,
+			Generations = 100000,
 		};
 		World.Init(p);
 	}

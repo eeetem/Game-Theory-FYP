@@ -37,6 +37,7 @@ public class Cell : IComparable<Cell>
 
 	public object lockObject = new object();
 
+	public List<Cell> Neighbours = new List<Cell>();
 
 
 	public Cell(Point position)
@@ -79,9 +80,10 @@ public class Cell : IComparable<Cell>
 		
 	}
 
-	public void InitiliaseRep(List<Cell> neighbours)
+	public void InitiliaseRep()
 	{
-		foreach (var n in neighbours)
+		Neighbours = World.CalculateNeighbourhs(this);
+		foreach (var n in Neighbours)
 		{
 			KnownReputations.TryAdd(n, 0.5f);
 		}
