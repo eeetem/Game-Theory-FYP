@@ -37,6 +37,21 @@ public class Game1 : Game
 		base.Initialize();
 		Camera.Init(GraphicsDevice,Window);
 		TextRenderer.Init(Content,GraphicsDevice);
+		
+		SimulationParameters p = new SimulationParameters
+		{
+			GlobalRepFactor = 0.3f,
+			RepEnabled = true,
+			EvolveRep = false,
+			GlobalRepInterpolationFactor = -10f,
+			EvolveInterpolation = true,
+			Generations = -1,
+		};
+		World.Init(p);
+	}
+
+	protected void MultiRun()
+	{
 		List<SimulationParameters> parameterSets = new List<SimulationParameters>();
 
 		for (float repFactor = -0.1f; repFactor <= 0.91f; repFactor += 0.1f)
@@ -64,7 +79,6 @@ public class Game1 : Game
 		}
 		World.Init(param);
 
-	
 	}
 	
 	private double[,] heatMapDataCoop = new double[11, 9];
