@@ -18,10 +18,12 @@ public class Cell : IComparable<Cell>
 	public float CooperationChance = 0.5f;
 	public float ReputationFactor = 0f;
 	public float ReputationInterpolationFactor = 0.3f;
+	public float IndependantVar = 0.3f;
 	
 	public float CooperationChanceCache = 0f;
 	public float ReputationFactorCache  = 0f;
 	public float ReputationInterpolationFactorCache  = 0f;
+	public float IndepententVarCahce  = 0f;
 	
 
 
@@ -43,7 +45,7 @@ public class Cell : IComparable<Cell>
 	public Cell(Point position)
 	{
 		this.position = position;
-		
+		IndependantVar = Random.Shared.NextSingle();
 
 		if (DiscreteStrategy)
 		{
@@ -171,7 +173,9 @@ public class Cell : IComparable<Cell>
 			CooperationChance = Math.Clamp(CooperationChance, 0, 1);
 			
 		}
-	
+		IndependantVar = Single.Lerp(IndependantVar, candidate.IndepententVarCahce, EvolutionInterpolationFactor);
+		IndependantVar += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
+		IndependantVar = Math.Clamp(IndependantVar, 0, 1);
 		
 		if(!World.CurrentParams.RepEnabled) return;
 
@@ -199,6 +203,7 @@ public class Cell : IComparable<Cell>
 		CooperationChanceCache = CooperationChance;
 		ReputationFactorCache = ReputationFactor;
 		ReputationInterpolationFactorCache = ReputationInterpolationFactor;
+		IndepententVarCahce = IndependantVar;
 	}
 
 	private float coopPercent = 0.5f;

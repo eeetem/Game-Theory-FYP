@@ -176,212 +176,229 @@ public static class World
 		public float StdDevCoop { get; set; }
 		public float StdDevRepFactor { get; set; }
 		public float StdDevRepInterpolationFactor { get; set; }
+
+			public float AvgIndependantVar { get; set; } // New property
+			public float StdDevIndependantVar { get; set; }
 	}
 	private static List<Details> detailsList = new List<Details>();
 
 	public static void PrintDetails()
-	{
-		float avgCoopfactor = 0;
-		float avgRepFactor = 0;
-		float avgRepInterpolationFactor = 0;
-		float avgRep = 0;
-		float avgScore = 0;
+{
+    float avgCoopfactor = 0;
+    float avgRepFactor = 0;
+    float avgRepInterpolationFactor = 0;
+    float avgRep = 0;
+    float avgScore = 0;
+    float avgIndependantVar = 0; // New variable
 
-		foreach (var c in grid)
-		{
-			avgCoopfactor += c.CooperationChance;
-			avgRepFactor += c.ReputationFactor;
-			avgRepInterpolationFactor += c.ReputationInterpolationFactor;
-			avgScore += c.Score;
+    foreach (var c in grid)
+    {
+        avgCoopfactor += c.CooperationChance;
+        avgRepFactor += c.ReputationFactor;
+        avgRepInterpolationFactor += c.ReputationInterpolationFactor;
+        avgScore += c.Score;
+        avgIndependantVar += c.IndependantVar; // New calculation
 
-			float avgRepForCell = 0;
-			foreach (var reputation in c.KnownReputations.Values)
-			{
-				avgRepForCell += reputation;
-			}
-			avgRepForCell /= c.KnownReputations.Count;
-			avgRep += avgRepForCell;
-		}
+        float avgRepForCell = 0;
+        foreach (var reputation in c.KnownReputations.Values)
+        {
+            avgRepForCell += reputation;
+        }
+        avgRepForCell /= c.KnownReputations.Count;
+        avgRep += avgRepForCell;
+    }
 
-		var total = grid.Size * grid.Size;
-		avgCoopfactor /= total;
-		avgRepFactor /= total;
-		avgScore /= total;
-		avgRep /= total;
-		avgRepInterpolationFactor /= total;
+    var total = grid.Size * grid.Size;
+    avgCoopfactor /= total;
+    avgRepFactor /= total;
+    avgScore /= total;
+    avgRep /= total;
+    avgRepInterpolationFactor /= total;
+    avgIndependantVar /= total; // New calculation
 
-		// Calculate standard deviations
-		float sumSqCoop = 0;
-		float sumSqRepFactor = 0;
-		float sumSqRepInterpolationFactor = 0;
+    // Calculate standard deviations
+    float sumSqCoop = 0;
+    float sumSqRepFactor = 0;
+    float sumSqRepInterpolationFactor = 0;
+    float sumSqIndependantVar = 0; // New variable
 
-		foreach (var c in grid)
-		{
-			sumSqCoop += (c.CooperationChance - avgCoopfactor) * (c.CooperationChance - avgCoopfactor);
-			sumSqRepFactor += (c.ReputationFactor - avgRepFactor) * (c.ReputationFactor - avgRepFactor);
-			sumSqRepInterpolationFactor += (c.ReputationInterpolationFactor - avgRepInterpolationFactor) * (c.ReputationInterpolationFactor - avgRepInterpolationFactor);
-		}
+    foreach (var c in grid)
+    {
+        sumSqCoop += (c.CooperationChance - avgCoopfactor) * (c.CooperationChance - avgCoopfactor);
+        sumSqRepFactor += (c.ReputationFactor - avgRepFactor) * (c.ReputationFactor - avgRepFactor);
+        sumSqRepInterpolationFactor += (c.ReputationInterpolationFactor - avgRepInterpolationFactor) * (c.ReputationInterpolationFactor - avgRepInterpolationFactor);
+        sumSqIndependantVar += (c.IndependantVar - avgIndependantVar) * (c.IndependantVar - avgIndependantVar); // New calculation
+    }
 
-		float stdDevCoop = (float)Math.Sqrt(sumSqCoop / total);
-		float stdDevRepFactor = (float)Math.Sqrt(sumSqRepFactor / total);
-		float stdDevRepInterpolationFactor = (float)Math.Sqrt(sumSqRepInterpolationFactor / total);
+    float stdDevCoop = (float)Math.Sqrt(sumSqCoop / total);
+    float stdDevRepFactor = (float)Math.Sqrt(sumSqRepFactor / total);
+    float stdDevRepInterpolationFactor = (float)Math.Sqrt(sumSqRepInterpolationFactor / total);
+    float stdDevIndependantVar = (float)Math.Sqrt(sumSqIndependantVar / total); // New calculation
 
-		Console.WriteLine("Average Cooperation Factor: " + avgCoopfactor);
-		Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
-		Console.WriteLine("Average Reputation Interpolation Factor: " + avgRepInterpolationFactor);
-		Console.WriteLine("Average Reputation: " + avgRep);
-		if (gamesBetrayed != 0)
-			Console.WriteLine("Percentage Cooperative Actions: " + (gamesCooped + gamesBetrayed) / (float)(gamesCooped + gamesBetrayed + gamesDefected));
-		Console.WriteLine("Average Score: " + avgScore);
-		Console.WriteLine("Total Games: " + totalGames);
-		Console.WriteLine("Standard Deviation of Cooperation Factor: " + stdDevCoop);
-		Console.WriteLine("Standard Deviation of Reputation Factor: " + stdDevRepFactor);
-		Console.WriteLine("Standard Deviation of Reputation Interpolation Factor: " + stdDevRepInterpolationFactor);
+    Console.WriteLine("Average Cooperation Factor: " + avgCoopfactor);
+    Console.WriteLine("Average Reputation Factor: " + avgRepFactor);
+    Console.WriteLine("Average Reputation Interpolation Factor: " + avgRepInterpolationFactor);
+    Console.WriteLine("Average Reputation: " + avgRep);
+    if (gamesBetrayed != 0)
+        Console.WriteLine("Percentage Cooperative Actions: " + (gamesCooped + gamesBetrayed) / (float)(gamesCooped + gamesBetrayed + gamesDefected));
+    Console.WriteLine("Average Score: " + avgScore);
+    Console.WriteLine("Total Games: " + totalGames);
+    Console.WriteLine("Standard Deviation of Cooperation Factor: " + stdDevCoop);
+    Console.WriteLine("Standard Deviation of Reputation Factor: " + stdDevRepFactor);
+    Console.WriteLine("Standard Deviation of Reputation Interpolation Factor: " + stdDevRepInterpolationFactor);
+    Console.WriteLine("Average Independant Var: " + avgIndependantVar); // New output
+    Console.WriteLine("Standard Deviation of Independant Var: " + stdDevIndependantVar); // New output
 
-		detailsList.Add(new Details
-		{
-			AvgCoop = avgCoopfactor * 100,
-			AvgRepFactor = avgRepFactor * 100,
-			AvgRepInterpolationFactor = avgRepInterpolationFactor * 100,
-			AvgScore = avgScore,
-			Generation = Generation,
-			CoopGames = gamesCooped,
-			BetrayedGames = gamesBetrayed,
-			DefectedGames = gamesDefected,
-			AvgRep = avgRep * 100,
-			StdDevCoop = stdDevCoop * 100,
-			StdDevRepFactor = stdDevRepFactor * 100,
-			StdDevRepInterpolationFactor = stdDevRepInterpolationFactor * 100
-		});
-	}
+    detailsList.Add(new Details
+    {
+        AvgCoop = avgCoopfactor * 100,
+        AvgRepFactor = avgRepFactor * 100,
+        AvgRepInterpolationFactor = avgRepInterpolationFactor * 100,
+        AvgScore = avgScore,
+        Generation = Generation,
+        CoopGames = gamesCooped,
+        BetrayedGames = gamesBetrayed,
+        DefectedGames = gamesDefected,
+        AvgRep = avgRep * 100,
+        StdDevCoop = stdDevCoop * 100,
+        StdDevRepFactor = stdDevRepFactor * 100,
+        StdDevRepInterpolationFactor = stdDevRepInterpolationFactor * 100,
+        AvgIndependantVar = avgIndependantVar * 100,
+        StdDevIndependantVar = stdDevIndependantVar * 100 
+    });
+}
 
+public static void DrawGraph()
+{
+    string title = GenerateTitle();
+    var plotModel1 = new PlotModel { Title = title };
 
-	public static void DrawGraph()
-	{
-		string title = GenerateTitle();
-		var plotModel1 = new PlotModel { Title = title };
+    // Define base colors
+    var baseColorCoop = OxyColors.Green;
+    var baseColorRepFactor = OxyColors.Blue;
+    var baseColorRepInterpolationFactor = OxyColors.Orange;
+    var baseColorIndependantVar = OxyColors.Red; // New color
 
-		// Define base colors
-		var baseColorCoop = OxyColors.Green;
-		var baseColorRepFactor = OxyColors.Blue;
-		var baseColorRepInterpolationFactor = OxyColors.Orange;
+    // Create series with different brightness for avg and std dev
+    var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle, Color = baseColorCoop.ChangeIntensity(0.7) };
+    var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepFactor.ChangeIntensity(0.7) };
+    var avgRepInterpolationFactorSeries = new LineSeries { Title = "Avg Reputation Interpolation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepInterpolationFactor.ChangeIntensity(0.7) };
+    var avgIndependantVarSeries = new LineSeries { Title = "Avg Independant Var", MarkerType = MarkerType.Circle, Color = baseColorIndependantVar.ChangeIntensity(0.7) }; // New series
 
-		// Create series with different brightness for avg and std dev
-		var avgCoopSeries = new LineSeries { Title = "Avg Cooperation Factor", MarkerType = MarkerType.Circle, Color = baseColorCoop.ChangeIntensity(0.7) };
-		var avgRepFactorSeries = new LineSeries { Title = "Avg Reputation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepFactor.ChangeIntensity(0.7) };
-		var avgRepInterpolationFactorSeries = new LineSeries { Title = "Avg Reputation Interpolation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepInterpolationFactor.ChangeIntensity(0.7) };
+    var stdDevCoopSeries = new LineSeries { Title = "Std Dev Cooperation Factor", MarkerType = MarkerType.Circle, Color = baseColorCoop.ChangeIntensity(1.3) };
+    var stdDevRepFactorSeries = new LineSeries { Title = "Std Dev Reputation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepFactor.ChangeIntensity(1.3) };
+    var stdDevRepInterpolationFactorSeries = new LineSeries { Title = "Std Dev Reputation Interpolation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepInterpolationFactor.ChangeIntensity(1.3) };
+    var stdDevIndependantVarSeries = new LineSeries { Title = "Std Dev Independant Var", MarkerType = MarkerType.Circle, Color = baseColorIndependantVar.ChangeIntensity(1.3) }; // New series
 
-		var stdDevCoopSeries = new LineSeries { Title = "Std Dev Cooperation Factor", MarkerType = MarkerType.Circle, Color = baseColorCoop.ChangeIntensity(1.3) };
-		var stdDevRepFactorSeries = new LineSeries { Title = "Std Dev Reputation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepFactor.ChangeIntensity(1.3) };
-		var stdDevRepInterpolationFactorSeries = new LineSeries { Title = "Std Dev Reputation Interpolation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepInterpolationFactor.ChangeIntensity(1.3) };
+    foreach (var detail in detailsList)
+    {
+        avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
+        avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
+        avgRepInterpolationFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepInterpolationFactor));
+        avgIndependantVarSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgIndependantVar)); // New point
 
-		foreach (var detail in detailsList)
-		{
-			avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
-			avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
-			avgRepInterpolationFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepInterpolationFactor));
+        stdDevCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.StdDevCoop));
+        stdDevRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.StdDevRepFactor));
+        stdDevRepInterpolationFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.StdDevRepInterpolationFactor));
+        stdDevIndependantVarSeries.Points.Add(new DataPoint(detail.Generation, detail.StdDevIndependantVar)); // New point
+    }
 
-			stdDevCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.StdDevCoop));
-			stdDevRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.StdDevRepFactor));
-			stdDevRepInterpolationFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.StdDevRepInterpolationFactor));
-		}
+    plotModel1.Series.Add(avgCoopSeries);
+    plotModel1.Series.Add(avgRepFactorSeries);
+    plotModel1.Series.Add(avgRepInterpolationFactorSeries);
+    plotModel1.Series.Add(avgIndependantVarSeries); // New series
+    plotModel1.Series.Add(stdDevCoopSeries);
+    plotModel1.Series.Add(stdDevRepFactorSeries);
+    plotModel1.Series.Add(stdDevRepInterpolationFactorSeries);
+    plotModel1.Series.Add(stdDevIndependantVarSeries); // New series
 
-		plotModel1.Series.Add(avgCoopSeries);
-		plotModel1.Series.Add(avgRepFactorSeries);
-		plotModel1.Series.Add(avgRepInterpolationFactorSeries);
-		plotModel1.Series.Add(stdDevCoopSeries);
-		plotModel1.Series.Add(stdDevRepFactorSeries);
-		plotModel1.Series.Add(stdDevRepInterpolationFactorSeries);
+    plotModel1.IsLegendVisible = true;
+    var legend1 = new Legend
+    {
+        LegendPosition = LegendPosition.TopRight,
+        LegendPlacement = LegendPlacement.Outside,
+        LegendOrientation = LegendOrientation.Horizontal,
+        LegendBorderThickness = 5
+    };
+    plotModel1.Legends.Add(legend1);
+    string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+    string fileName1 = $"plot1_{timestamp}.png";
+    using (var stream = new MemoryStream())
+    {
+        var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+        pngExporter.Export(plotModel1, stream);
+        File.WriteAllBytes(fileName1, stream.ToArray());
+    }
 
-		plotModel1.IsLegendVisible = true;
-		var legend1 = new Legend
-		{
-			LegendPosition = LegendPosition.TopRight,
-			LegendPlacement = LegendPlacement.Outside,
-			LegendOrientation = LegendOrientation.Horizontal,
-			LegendBorderThickness = 5
-		};
-		plotModel1.Legends.Add(legend1);
-		string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-		string fileName1 = $"plot1_{timestamp}.png";
-		using (var stream = new MemoryStream())
-		{
-			var pngExporter = new PngExporter { Width = 1280, Height = 720 };
-			pngExporter.Export(plotModel1, stream);
-			File.WriteAllBytes(fileName1, stream.ToArray());
-		}
+    var plotModel2 = new PlotModel { Title = "Avg Reputation and Avg Score" };
 
-		var plotModel2 = new PlotModel { Title = "Avg Reputation and Avg Score" };
+    var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle, Color = OxyColors.Red };
+    var avgRepSeries = new LineSeries { Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple };
 
-		var avgScoreSeries = new LineSeries { Title = "Avg Score", MarkerType = MarkerType.Circle, Color = OxyColors.Red };
-		var avgRepSeries = new LineSeries { Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple };
+    foreach (var detail in detailsList)
+    {
+        avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
+        avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
+    }
 
-		foreach (var detail in detailsList)
-		{
-			avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
-			avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
-		}
+    plotModel2.Series.Add(avgScoreSeries);
+    plotModel2.Series.Add(avgRepSeries);
 
-		plotModel2.Series.Add(avgScoreSeries);
-		plotModel2.Series.Add(avgRepSeries);
+    plotModel2.IsLegendVisible = true;
+    var legend2 = new Legend
+    {
+        LegendPosition = LegendPosition.TopRight,
+        LegendPlacement = LegendPlacement.Outside,
+        LegendOrientation = LegendOrientation.Horizontal,
+        LegendBorderThickness = 5
+    };
+    plotModel2.Legends.Add(legend2);
 
-		plotModel2.IsLegendVisible = true;
-		var legend2 = new Legend
-		{
-			LegendPosition = LegendPosition.TopRight,
-			LegendPlacement = LegendPlacement.Outside,
-			LegendOrientation = LegendOrientation.Horizontal,
-			LegendBorderThickness = 5
-		};
-		plotModel2.Legends.Add(legend2);
+    string fileName2 = $"plot2_{timestamp}.png";
 
-		string fileName2 = $"plot2_{timestamp}.png";
+    using (var stream = new MemoryStream())
+    {
+        var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+        pngExporter.Export(plotModel2, stream);
+        File.WriteAllBytes(fileName2, stream.ToArray());
+    }
 
-		using (var stream = new MemoryStream())
-		{
-			var pngExporter = new PngExporter { Width = 1280, Height = 720 };
-			pngExporter.Export(plotModel2, stream);
-			File.WriteAllBytes(fileName2, stream.ToArray());
-		}
+    var plotModel3 = new PlotModel { Title = title };
 
-		var plotModel3 = new PlotModel { Title = title };
+    var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
+    var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red };
+    var defectedGamesSeries = new LineSeries { Title = "Mutual Defected Games", MarkerType = MarkerType.Circle, Color = OxyColors.Orange };
 
-		var coopGamesSeries = new LineSeries { Title = "Mutual Cooperative Games", MarkerType = MarkerType.Circle };
-		var betrayedGamesSeries = new LineSeries { Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red };
-		var defectedGamesSeries = new LineSeries { Title = "Mutual Defected Games", MarkerType = MarkerType.Circle, Color = OxyColors.Orange };
+    foreach (var detail in detailsList)
+    {
+        coopGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.CoopGames));
+        betrayedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.BetrayedGames));
+        defectedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.DefectedGames));
+    }
 
-		foreach (var detail in detailsList)
-		{
-			coopGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.CoopGames));
-			betrayedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.BetrayedGames));
-			defectedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.DefectedGames));
-		}
+    plotModel3.Series.Add(coopGamesSeries);
+    plotModel3.Series.Add(betrayedGamesSeries);
+    plotModel3.Series.Add(defectedGamesSeries);
 
-		plotModel3.Series.Add(coopGamesSeries);
-		plotModel3.Series.Add(betrayedGamesSeries);
-		plotModel3.Series.Add(defectedGamesSeries);
+    plotModel3.IsLegendVisible = true;
+    var legend3 = new Legend
+    {
+        LegendPosition = LegendPosition.TopRight,
+        LegendPlacement = LegendPlacement.Outside,
+        LegendOrientation = LegendOrientation.Horizontal,
+        LegendBorderThickness = 5
+    };
+    plotModel3.Legends.Add(legend3);
 
-		plotModel3.IsLegendVisible = true;
-		var legend3 = new Legend
-		{
-			LegendPosition = LegendPosition.TopRight,
-			LegendPlacement = LegendPlacement.Outside,
-			LegendOrientation = LegendOrientation.Horizontal,
-			LegendBorderThickness = 5
-		};
-		plotModel3.Legends.Add(legend3);
+    string fileName3 = $"plot3_{timestamp}.png";
 
-		string fileName3 = $"plot3_{timestamp}.png";
-
-		using (var stream = new MemoryStream())
-		{
-			var pngExporter = new PngExporter { Width = 1280, Height = 720 };
-			pngExporter.Export(plotModel3, stream);
-			File.WriteAllBytes(fileName3, stream.ToArray());
-		}
-	}
-
-
+    using (var stream = new MemoryStream())
+    {
+        var pngExporter = new PngExporter { Width = 1280, Height = 720 };
+        pngExporter.Export(plotModel3, stream);
+        File.WriteAllBytes(fileName3, stream.ToArray());
+    }
+}
 	private static string GenerateTitle()
 	{
 		// Round the float values to 2 decimal places
