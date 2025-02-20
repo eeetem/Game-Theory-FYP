@@ -31,8 +31,7 @@ public class Cell : IComparable<Cell>
 
 	private const float MutationFactor = 0.1f;
 	private const float EvolutionInterpolationFactor = 0.7f;
-	
-	public const bool DiscreteStrategy = false;
+
 	public const bool NoRandomCooperate = true;
 
 	public readonly ConcurrentDictionary<Cell,float> KnownReputations = new ConcurrentDictionary<Cell, float>();
@@ -47,14 +46,14 @@ public class Cell : IComparable<Cell>
 		this.position = position;
 		IndependantVar = Random.Shared.NextSingle();
 
-		if (DiscreteStrategy)
+	
+		if (World.CurrentParams.GlobalCoopFactor < -1f)
 		{
-			//CooperationChance = Random.Shared.NextInt64(0, 2);
-			CooperationChance = 1;
+			CooperationChance = Random.Shared.NextSingle() * 2 - 1;
 		}
 		else
 		{
-			CooperationChance = Random.Shared.NextSingle();
+			CooperationChance = World.CurrentParams.GlobalCoopFactor;
 		}
 
 		if (World.CurrentParams.RepEnabled)
@@ -143,7 +142,7 @@ public class Cell : IComparable<Cell>
 				float maxDist = Math.Abs(chance -  KnownReputations[oponent]);
 				float targetDist = Math.Abs(chance - negativeTarget);
 				if(targetDist > maxDist)
-					 negativeTarget = chance + (positiveChangeForRep ? -maxDist : maxDist);
+					negativeTarget = chance + (positiveChangeForRep ? -maxDist : maxDist);
 				
 				chance = Single.Lerp(chance, negativeTarget, -ReputationFactor);
 			
@@ -162,17 +161,12 @@ public class Cell : IComparable<Cell>
 	{
 		if (!CanEvolve) return;
 		CanEvolve = false;
-		if (DiscreteStrategy)
-		{
-			CooperationChance = candidate.CooperationChanceCache;
-		}
-		else
-		{
-			CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, EvolutionInterpolationFactor);
-			CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
-			CooperationChance = Math.Clamp(CooperationChance, 0, 1);
+
+		CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, EvolutionInterpolationFactor);
+		CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
+		CooperationChance = Math.Clamp(CooperationChance, 0, 1);
 			
-		}
+		
 		IndependantVar = Single.Lerp(IndependantVar, candidate.IndepententVarCahce, EvolutionInterpolationFactor);
 		IndependantVar += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
 		IndependantVar = Math.Clamp(IndependantVar, 0, 1);
@@ -183,7 +177,7 @@ public class Cell : IComparable<Cell>
 		{
 			ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, EvolutionInterpolationFactor);
 			ReputationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
-			ReputationFactor = Math.Clamp(ReputationFactor, -1, 1f);
+			ReputationFactor = Math.Clamp(ReputationFactor, 0, 1f);
 		}
 		if (World.CurrentParams.EvolveInterpolation)
 		{

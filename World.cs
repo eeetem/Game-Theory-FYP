@@ -767,6 +767,7 @@ public class SimulationParameters
 	public event EventHandler<List<World.Details>> OnSimulationEnd;
 	public bool EvolveRep;
 	public bool EvolveInterpolation;
+	public float GlobalCoopFactor;
 
 	public void RaiseOnSimulationEnd(List<World.Details> details)
 	{
