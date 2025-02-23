@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended;
 
 namespace Game_Theory_FYP;
 
@@ -18,7 +19,7 @@ public class Cell : IComparable<Cell>
 	public float CooperationChance = 0.5f;
 	public float ReputationFactor = 0f;
 	public float ReputationInterpolationFactor = 0.3f;
-	public float IndependantVar = 0.3f;
+	public float IndependantVar = 0;
 	
 	public float CooperationChanceCache = 0f;
 	public float ReputationFactorCache  = 0f;
@@ -29,7 +30,7 @@ public class Cell : IComparable<Cell>
 
 
 
-	private const float MutationFactor = 0.1f;
+	private const float MutationFactor = 0.05f;
 	private const float EvolutionInterpolationFactor = 0.7f;
 
 	public const bool NoRandomCooperate = true;
@@ -44,42 +45,18 @@ public class Cell : IComparable<Cell>
 	public Cell(Point position)
 	{
 		this.position = position;
-		IndependantVar = Random.Shared.NextSingle();
-
+		IndependantVar = Random.Shared.NextSingle(World.CurrentParams.GlobalCoopFactorRangeStart, World.CurrentParams.GlobalCoopFactorRangeEnd);
+		
+		CooperationChance = Random.Shared.NextSingle(World.CurrentParams.GlobalCoopFactorRangeStart, World.CurrentParams.GlobalCoopFactorRangeEnd);
 	
-		if (World.CurrentParams.GlobalCoopFactor < -1f)
-		{
-			CooperationChance = Random.Shared.NextSingle() * 2 - 1;
-		}
-		else
-		{
-			CooperationChance = World.CurrentParams.GlobalCoopFactor;
-		}
-
 		if (World.CurrentParams.RepEnabled)
 		{
-			if (World.CurrentParams.GlobalRepFactor < -1f)
-			{
-				
-				ReputationFactor = Random.Shared.NextSingle() * 2 - 1;
-			}
-			else
-			{
-				ReputationFactor = World.CurrentParams.GlobalRepFactor;
-			}
-			
-			if(World.CurrentParams.GlobalRepInterpolationFactor< -1f)
-			{
-				ReputationInterpolationFactor = Random.Shared.NextSingle();
-			}
-			else
-			{
-				ReputationInterpolationFactor = World.CurrentParams.GlobalRepInterpolationFactor;
-			}
-			
+			ReputationFactor = Random.Shared.NextSingle(World.CurrentParams.GlobalRepFactorRangeStart, World.CurrentParams.GlobalRepFactorRangeEnd);
+			ReputationInterpolationFactor = Random.Shared.NextSingle(World.CurrentParams.GlobalRepInterpolationFactorRangeStart, World.CurrentParams.GlobalRepInterpolationFactorRangeEnd);
 		}
 		
 	}
+
 
 	public void InitiliaseRep()
 	{
@@ -119,7 +96,7 @@ public class Cell : IComparable<Cell>
 	{
 		if(!World.CurrentParams.RepEnabled) return;
 		var currentRep = KnownReputations[opponent];
-		var newRep = Single.Lerp(currentRep, opponentCooperated ? 1 : 0, ReputationInterpolationFactor);
+		var newRep = Single.Lerp(currentRep, opponentCooperated ? 1 : 0, Math.Clamp(ReputationInterpolationFactor,0f,1f));
 		newRep = Single.Clamp(newRep, 0, 1);
 		KnownReputations[opponent] = newRep;
 
@@ -127,7 +104,8 @@ public class Cell : IComparable<Cell>
 	public bool CooperateOrNot(Cell oponent)
 	{
 		
-		float chance = CooperationChance;
+		float chance = Math.Clamp(CooperationChance,0f,1f);
+		
 		if (World.CurrentParams.RepEnabled)
 		{
 			
@@ -157,33 +135,37 @@ public class Cell : IComparable<Cell>
 	}
 
 	public bool CanEvolve = true;
+
 	public void UpdateStrategy(Cell candidate)
 	{
 		if (!CanEvolve) return;
 		CanEvolve = false;
 
+		float oldCooperationChance = CooperationChance;
+
 		CooperationChance = Single.Lerp(CooperationChance, candidate.CooperationChanceCache, EvolutionInterpolationFactor);
-		CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
-		CooperationChance = Math.Clamp(CooperationChance, 0, 1);
-			
+		//CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
+		//	CooperationChance = Math.Clamp(CooperationChance, 0, 1);
+		
+
 		
 		IndependantVar = Single.Lerp(IndependantVar, candidate.IndepententVarCahce, EvolutionInterpolationFactor);
-		IndependantVar += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
-		IndependantVar = Math.Clamp(IndependantVar, 0, 1);
+		//IndependantVar += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
+		//IndependantVar = Math.Clamp(IndependantVar, 0, 1);
 		
 		if(!World.CurrentParams.RepEnabled) return;
 
 		if (World.CurrentParams.EvolveRep)
 		{
 			ReputationFactor = Single.Lerp(ReputationFactor, candidate.ReputationFactorCache, EvolutionInterpolationFactor);
-			ReputationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
-			ReputationFactor = Math.Clamp(ReputationFactor, 0, 1f);
+			//ReputationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
+			//ReputationFactor = Math.Clamp(ReputationFactor, 0, 1f);
 		}
 		if (World.CurrentParams.EvolveInterpolation)
 		{
 			ReputationInterpolationFactor = Single.Lerp(ReputationInterpolationFactor, candidate.ReputationInterpolationFactorCache, EvolutionInterpolationFactor);
-			ReputationInterpolationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
-			ReputationInterpolationFactor = Math.Clamp(ReputationInterpolationFactor, 0f, 1f);
+			//ReputationInterpolationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
+			//ReputationInterpolationFactor = Math.Clamp(ReputationInterpolationFactor, 0f, 1f);
 		}
 		
 	}
@@ -213,6 +195,22 @@ public class Cell : IComparable<Cell>
 		}
 		coopPercent = cooped / (float) AlreadyPlayed.Count;
 	}
-	
 
+
+	public void Mutate()
+	{
+		CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
+		IndependantVar += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
+		if(!World.CurrentParams.RepEnabled) return;
+
+		if (World.CurrentParams.EvolveRep)
+		{
+			ReputationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
+		}
+
+		if (World.CurrentParams.EvolveInterpolation)
+		{
+			ReputationInterpolationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
+		}
+	}
 }

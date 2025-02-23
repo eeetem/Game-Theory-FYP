@@ -200,9 +200,9 @@ public static class World
         avgIndependantVar += c.IndependantVar; // New calculation
 
         float avgRepForCell = 0;
-        foreach (var reputation in c.KnownReputations.Values)
+        foreach (var kvp in c.KnownReputations)
         {
-            avgRepForCell += reputation;
+	        avgRepForCell += kvp.Value;
         }
         avgRepForCell /= c.KnownReputations.Count;
         avgRep += avgRepForCell;
@@ -248,6 +248,8 @@ public static class World
     Console.WriteLine("Standard Deviation of Reputation Interpolation Factor: " + stdDevRepInterpolationFactor);
     Console.WriteLine("Average Independant Var: " + avgIndependantVar); // New output
     Console.WriteLine("Standard Deviation of Independant Var: " + stdDevIndependantVar); // New output
+    
+
 
     detailsList.Add(new Details
     {
@@ -399,11 +401,11 @@ public static void DrawGraph()
         File.WriteAllBytes(fileName3, stream.ToArray());
     }
 }
-	private static string GenerateTitle()
-	{
-		// Round the float values to 2 decimal places
-		return $"Simulation - GlobalRepFactor: {CurrentParams.GlobalRepFactor.ToString("0.00")}, GlobalRepInterpolationFactor: {CurrentParams.GlobalRepInterpolationFactor.ToString("0.00")}, Generations: {CurrentParams.Generations}";
-	}
+private static string GenerateTitle()
+{
+	// Round the float values to 2 decimal places
+	return $"Simulation - RepFactor: {CurrentParams.GlobalRepFactorRangeStart.ToString("0.00")} to {CurrentParams.GlobalRepFactorRangeEnd.ToString("0.00")}, RepInterpolationFactor: {CurrentParams.GlobalRepInterpolationFactorRangeStart.ToString("0.00")} to {CurrentParams.GlobalRepInterpolationFactorRangeEnd.ToString("0.00")}, CoopFactor: {CurrentParams.GlobalCoopFactorRangeStart.ToString("0.00")} to {CurrentParams.GlobalCoopFactorRangeEnd.ToString("0.00")}, Generations: {CurrentParams.Generations}, MutationRate: {CurrentParams.MutationRate.ToString("0.00")}";
+}
 	
 	const int NeighbourhoodSize = 1;
 	public static List<Cell> CalculateNeighbourhs(Cell c)
@@ -608,6 +610,12 @@ public static void DrawGraph()
 				c.UpdateStrategy(neig);//cell can copy multiple cells in 1 go?
 			}
 		});
+		Parallel.For(0, (int)(grid.Size*grid.Size*CurrentParams.MutationRate), i =>
+		{
+			//pick random cell
+			var c = grid.GetElement(Random.Shared.Next(grid.Size),Random.Shared.Next(grid.Size));
+			c.Mutate();
+		});
 		PrintDetails();
 
 		currentState = GameState.PlayGames;
@@ -760,14 +768,22 @@ public static void DrawGraph()
 public class SimulationParameters
 {
 	public bool RepEnabled = true;
-	public float GlobalRepFactor = 0.5f;
-	public float GlobalRepInterpolationFactor = 0.5f;
+	//rep factor
+	public float GlobalRepFactorRangeStart = 0f;
+	public float GlobalRepFactorRangeEnd = 1f;
+	//rep interpolation factor
+	public float GlobalRepInterpolationFactorRangeStart = 0f;
+	public float GlobalRepInterpolationFactorRangeEnd = 1f;
+	//coop factor
+	public float GlobalCoopFactorRangeStart = 0f;
+	public float GlobalCoopFactorRangeEnd = 1f;
 	public int Generations = 500;
+	public float MutationRate = 0.5f;
 	public SimulationParameters NextSimulation;
 	public event EventHandler<List<World.Details>> OnSimulationEnd;
 	public bool EvolveRep;
 	public bool EvolveInterpolation;
-	public float GlobalCoopFactor;
+	
 
 	public void RaiseOnSimulationEnd(List<World.Details> details)
 	{

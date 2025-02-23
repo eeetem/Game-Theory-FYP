@@ -40,29 +40,42 @@ public class Game1 : Game
 		
 		SimulationParameters p = new SimulationParameters
 		{
-			GlobalRepFactor = 0,
-			RepEnabled = true,
-			EvolveRep = true,
-			GlobalRepInterpolationFactor = 0,
+			GlobalCoopFactorRangeStart = 0,
+			GlobalCoopFactorRangeEnd = 0.1f,
+			
+			GlobalRepInterpolationFactorRangeStart = 0.1f,
+			GlobalRepInterpolationFactorRangeEnd = 0.1f,
 			EvolveInterpolation = true,
-			GlobalCoopFactor = 0,
-			Generations = 100000,
+			
+			GlobalRepFactorRangeStart = 0.1f,
+			GlobalRepFactorRangeEnd = 0.1f,
+			EvolveRep = true,
+			
+			RepEnabled = true,
+			
+		
+			MutationRate = 2,
+			Generations = 1000000,
 		};
 		World.Init(p);
+	//	MultiRun();
 	}
 
 	protected void MultiRun()
 	{
 		List<SimulationParameters> parameterSets = new List<SimulationParameters>();
 
-		for (float repFactor = -0.1f; repFactor <= 0.91f; repFactor += 0.1f)
+		for (float repFactor = 0.1f; repFactor <= 0.91f; repFactor += 0.1f)
 		{
 			for (float repInterpolationFactor = 0.1f; repInterpolationFactor <= 0.91f; repInterpolationFactor += 0.1f)
 			{
 				parameterSets.Add(new SimulationParameters
 				{
-					GlobalRepFactor = repFactor,
-					GlobalRepInterpolationFactor = repInterpolationFactor
+					GlobalRepFactorRangeStart = repFactor,
+					GlobalRepFactorRangeEnd = repFactor,
+					GlobalRepInterpolationFactorRangeStart = repInterpolationFactor,
+					GlobalRepInterpolationFactorRangeEnd = repInterpolationFactor,
+					Generations = 500
 				});
 			}
 		}
@@ -82,9 +95,9 @@ public class Game1 : Game
 
 	}
 	
-	private double[,] heatMapDataCoop = new double[11, 9];
-	private double[,] heatMapDataDefected = new double[11, 9];
-	private double[,] heatMapDataBetrayed= new double[11, 9];
+	private double[,] heatMapDataCoop = new double[9, 9];
+	private double[,] heatMapDataDefected = new double[9, 9];
+	private double[,] heatMapDataBetrayed= new double[9, 9];
 
 	private void Grid2D(object sender, List<World.Details> e)
 	{
@@ -117,22 +130,21 @@ public class Game1 : Game
 		});
 
 		// Update the heat map data with a new data point for cooperation games
-		int xIndex = (int)((simulationParameters.GlobalRepFactor+0.1)  * 10); // Adjust the scaling as needed
-		int yIndex = (int)(simulationParameters.GlobalRepInterpolationFactor * 10) -1; // Adjust the scaling as needed
+		int xIndex = (int)((simulationParameters.GlobalRepFactorRangeStart)  * 10)-1; // Adjust the scaling as needed
+		int yIndex = (int)(simulationParameters.GlobalRepInterpolationFactorRangeStart * 10)-1; // Adjust the scaling as needed
 
-		if (xIndex >= 0 && xIndex < heatMapDataCoop.GetLength(0) && yIndex >= 0 && yIndex < heatMapDataCoop.GetLength(1))
-		{
-			float coop = (float)e.Last().CoopGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
-			heatMapDataCoop[xIndex, yIndex] = coop;
-			float defected = (float)e.Last().DefectedGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
-			heatMapDataDefected[xIndex, yIndex] = defected;
-			float betrayed = (float)e.Last().BetrayedGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
-			heatMapDataBetrayed[xIndex, yIndex] = betrayed;
-		}
+	
+		float coop = (float)e.Last().CoopGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
+		heatMapDataCoop[xIndex, yIndex] = coop;
+		float defected = (float)e.Last().DefectedGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
+		heatMapDataDefected[xIndex, yIndex] = defected;
+		float betrayed = (float)e.Last().BetrayedGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
+		heatMapDataBetrayed[xIndex, yIndex] = betrayed;
+		
 		// Create a heat map series for cooperation games
 		var heatMapSeriesCoop = new HeatMapSeries
 		{
-			X0 = -0.1,
+			X0 = 0.1,
 			X1 = 0.9,
 			Y0 = 0.1,
 			Y1 = 0.9,
@@ -144,7 +156,7 @@ public class Game1 : Game
 		// Add the heat map series to the plot model for cooperation games
 		plotModelCoop.Series.Add(heatMapSeriesCoop);
 		// Define corrected plot boundaries
-		double xMin = -0.1;
+		double xMin = 0.1;
 		double xMax = 0.9;
 		double yMin = 0.1;  // Changed from 0.0 to 0.1
 		double yMax = 1.0;  // Changed from 0.9 to 1.0
