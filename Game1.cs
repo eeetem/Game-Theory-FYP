@@ -41,21 +41,21 @@ public class Game1 : Game
 		SimulationParameters p = new SimulationParameters
 		{
 			GlobalCoopFactorRangeStart = 0,
-			GlobalCoopFactorRangeEnd = 0.1f,
+			GlobalCoopFactorRangeEnd = 0.7f,
 			
-			GlobalRepInterpolationFactorRangeStart = 0.1f,
-			GlobalRepInterpolationFactorRangeEnd = 0.1f,
+			GlobalRepInterpolationFactorRangeStart = 0f,
+			GlobalRepInterpolationFactorRangeEnd = 0.7f,
 			EvolveInterpolation = true,
 			
-			GlobalRepFactorRangeStart = 0.1f,
-			GlobalRepFactorRangeEnd = 0.1f,
+			GlobalRepFactorRangeStart = 0,
+			GlobalRepFactorRangeEnd = 0.7f,
 			EvolveRep = true,
 			
 			RepEnabled = true,
 			
 		
-			MutationRate = 2,
-			Generations = 1000000,
+			MutationRate = 4,
+			Generations = 30000,
 		};
 		World.Init(p);
 	//	MultiRun();

@@ -543,7 +543,7 @@ private static string GenerateTitle()
 				{
 					if (!a.AlreadyPlayed.ContainsKey(b))
 					{
-						a.AlreadyPlayed[b] = (aCooperate, bCooperate);
+						a.AlreadyPlayed[b] = new ValueTuple<bool,bool>(aCooperate, bCooperate);
 					}
 					else
 					{

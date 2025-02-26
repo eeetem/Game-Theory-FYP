@@ -13,7 +13,7 @@ public class Cell : IComparable<Cell>
 	public readonly Point position;
 	
 	//key, you coop, opponent coop
-	public readonly ConcurrentDictionary<Cell,(bool,bool)> AlreadyPlayed = new ConcurrentDictionary<Cell, (bool,bool)>();
+	public readonly ConcurrentDictionary<Cell, ValueTuple<bool,bool>> AlreadyPlayed = new ConcurrentDictionary<Cell, (bool,bool)>();
 
 
 	public float CooperationChance = 0.5f;
@@ -54,7 +54,6 @@ public class Cell : IComparable<Cell>
 			ReputationFactor = Random.Shared.NextSingle(World.CurrentParams.GlobalRepFactorRangeStart, World.CurrentParams.GlobalRepFactorRangeEnd);
 			ReputationInterpolationFactor = Random.Shared.NextSingle(World.CurrentParams.GlobalRepInterpolationFactorRangeStart, World.CurrentParams.GlobalRepInterpolationFactorRangeEnd);
 		}
-		
 	}
 
 
