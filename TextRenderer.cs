@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -9,38 +8,41 @@ namespace Game_Theory_FYP;
 
 public static class TextRenderer
 {
-	private static ConcurrentDictionary<string, Texture2D> Textures = new ConcurrentDictionary<string, Texture2D>();
+	private static readonly ConcurrentDictionary<string, Texture2D> Textures = new();
 
-	private static readonly List<string> MissingTextures = new List<string>();
+	private static readonly List<string> MissingTextures = new();
 	private static ContentManager content = null!;
 	private static GraphicsDevice graphicsDevice = null!;
 
-	private static readonly object SyncObj = new object();
+	private static readonly object SyncObj = new();
+
 	public static void Init(ContentManager contentManager, GraphicsDevice g)
 	{
 		content = contentManager;
 		graphicsDevice = g;
 	}
+
 	public static void DrawText(this SpriteBatch spriteBatch, string text, Vector2 position, Color c)
 	{
-		DrawText(spriteBatch,  text,  position, 1,100,  c);
+		DrawText(spriteBatch, text, position, 1, 100, c);
 	}
-	public static void DrawText(this SpriteBatch spriteBatch, string text, Vector2 position,float scale, Color c)
+
+	public static void DrawText(this SpriteBatch spriteBatch, string text, Vector2 position, float scale, Color c)
 	{
-		DrawText(spriteBatch,  text,  position, scale,100,  c);
+		DrawText(spriteBatch, text, position, scale, 100, c);
 	}
-	
+
 	public static void DrawText(this SpriteBatch spriteBatch, string text, Vector2 position, float scale, int width, Color c)
 	{
 		int row = 0;
 		int charsinRow = 0;
-		Color originalColor = c;
+		var originalColor = c;
 
 		for (int index = 0; index < text.Length; index++)
 		{
 			char car = text[index];
-			car = Char.ToLower(car);
-			
+			car = char.ToLower(car);
+
 
 			if (car == '\n')
 			{
@@ -60,8 +62,9 @@ public static class TextRenderer
 						index = i;
 						break;
 					}
+
 					color += text[i];
-					index = i+1;
+					index = i + 1;
 				}
 
 				if (color == "-")
@@ -72,12 +75,10 @@ public static class TextRenderer
 				{
 					var prop = typeof(Color).GetProperty(color);
 					if (prop != null)
-						c = (Color)(prop.GetValue(null, null) ?? Color.White);
-					
+						c = (Color) (prop.GetValue(null, null) ?? Color.White);
 				}
+
 				continue;
-
-
 			}
 
 			if (car == ' ')
@@ -85,7 +86,7 @@ public static class TextRenderer
 				int nextSpaceCounter = 0;
 				int nextSpace = 0;
 				//look for next space
-				for (int i = index+1; i < text.Length; i++)
+				for (int i = index + 1; i < text.Length; i++)
 				{
 					nextSpaceCounter++;
 					if (text[i] == ' ' || text[i] == '\n' || text[i] == '[')
@@ -93,7 +94,6 @@ public static class TextRenderer
 						nextSpace = nextSpaceCounter;
 						break;
 					}
-
 				}
 
 				if (charsinRow + nextSpace > width)
@@ -103,13 +103,14 @@ public static class TextRenderer
 					continue;
 				}
 			}
+
 			if (charsinRow > width)
 			{
 				row++;
 				charsinRow = 0;
 			}
 
-			if(car == ' ')
+			if (car == ' ')
 			{
 				charsinRow++;
 				continue;
@@ -121,6 +122,7 @@ public static class TextRenderer
 			charsinRow++;
 		}
 	}
+
 	public static Texture2D GetTextTexture(char c)
 	{
 		string texId;
@@ -186,27 +188,19 @@ public static class TextRenderer
 		}
 
 		Texture2D t;
-		if(HasTexture("text/" + texId)){
-			t= GetTexture("text/" + texId);
-		}else{
+		if (HasTexture("text/" + texId))
+			t = GetTexture("text/" + texId);
+		else
 			t = GetTexture("text/broken");
-			
-		}
 
 		return t;
 	}
 
 	public static bool HasTexture(string name)
 	{
-		if (Textures.ContainsKey(name))
-		{
-			return true;
-		}
+		if (Textures.ContainsKey(name)) return true;
 
-		if (MissingTextures.Contains(name))
-		{
-			return false;
-		}
+		if (MissingTextures.Contains(name)) return false;
 
 
 		try
@@ -222,32 +216,24 @@ public static class TextRenderer
 	}
 
 	public static Texture2D GetTexture(string name)
+	{
+		if (Textures.TryGetValue(name, out var texture)) return texture;
+		if (name != "")
 		{
-	
-			if (Textures.TryGetValue(name, out var texture))
-			{
-				return texture;
-			}
-			if (name != "")
-			{
-			
-				Textures.TryAdd(name, content.Load<Texture2D>(name));
-			
-			}
-			else
-			{
-				var tex = new Texture2D(graphicsDevice, 1, 1);
-				//make it white
-				var data = new Color[1];
-				for (int i = 0; i < data.Length; ++i) data[i] = Color.White;
-				tex.SetData(data);
-		
-				Textures.TryAdd(name, tex);
-			
-			}
-		
-
-			return Textures[name];
-		
+			Textures.TryAdd(name, content.Load<Texture2D>(name));
 		}
+		else
+		{
+			var tex = new Texture2D(graphicsDevice, 1, 1);
+			//make it white
+			var data = new Color[1];
+			for (int i = 0; i < data.Length; ++i) data[i] = Color.White;
+			tex.SetData(data);
+
+			Textures.TryAdd(name, tex);
+		}
+
+
+		return Textures[name];
+	}
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -15,9 +14,13 @@ namespace Game_Theory_FYP;
 
 public class Game1 : Game
 {
-	private GraphicsDeviceManager _graphics;
-	private SpriteBatch _spriteBatch;
 	public static Game1 instance;
+	private readonly GraphicsDeviceManager _graphics;
+	private SpriteBatch _spriteBatch;
+	private readonly double[,] heatMapDataBetrayed = new double[9, 9];
+
+	private readonly double[,] heatMapDataCoop = new double[9, 9];
+	private readonly double[,] heatMapDataDefected = new double[9, 9];
 
 
 	public Game1()
@@ -35,55 +38,51 @@ public class Game1 : Game
 	protected override void Initialize()
 	{
 		base.Initialize();
-		Camera.Init(GraphicsDevice,Window);
-		TextRenderer.Init(Content,GraphicsDevice);
-		
-		SimulationParameters p = new SimulationParameters
+		Camera.Init(GraphicsDevice, Window);
+		TextRenderer.Init(Content, GraphicsDevice);
+
+		var p = new SimulationParameters
 		{
 			GlobalCoopFactorRangeStart = 0,
 			GlobalCoopFactorRangeEnd = 0.7f,
-			
+
 			GlobalRepInterpolationFactorRangeStart = 0f,
 			GlobalRepInterpolationFactorRangeEnd = 0.7f,
 			EvolveInterpolation = true,
-			
+
 			GlobalRepFactorRangeStart = 0,
 			GlobalRepFactorRangeEnd = 0.7f,
 			EvolveRep = true,
-			
+
 			RepEnabled = true,
-			
-		
+
+
 			MutationRate = 4,
-			Generations = 30000,
+			Generations = 30000
 		};
 		World.Init(p);
-	//	MultiRun();
+		//	MultiRun();
 	}
 
 	protected void MultiRun()
 	{
-		List<SimulationParameters> parameterSets = new List<SimulationParameters>();
+		var parameterSets = new List<SimulationParameters>();
 
 		for (float repFactor = 0.1f; repFactor <= 0.91f; repFactor += 0.1f)
-		{
-			for (float repInterpolationFactor = 0.1f; repInterpolationFactor <= 0.91f; repInterpolationFactor += 0.1f)
+		for (float repInterpolationFactor = 0.1f; repInterpolationFactor <= 0.91f; repInterpolationFactor += 0.1f)
+			parameterSets.Add(new SimulationParameters
 			{
-				parameterSets.Add(new SimulationParameters
-				{
-					GlobalRepFactorRangeStart = repFactor,
-					GlobalRepFactorRangeEnd = repFactor,
-					GlobalRepInterpolationFactorRangeStart = repInterpolationFactor,
-					GlobalRepInterpolationFactorRangeEnd = repInterpolationFactor,
-					Generations = 500
-				});
-			}
-		}
+				GlobalRepFactorRangeStart = repFactor,
+				GlobalRepFactorRangeEnd = repFactor,
+				GlobalRepInterpolationFactorRangeStart = repInterpolationFactor,
+				GlobalRepInterpolationFactorRangeEnd = repInterpolationFactor,
+				Generations = 500
+			});
 
-		SimulationParameters param = parameterSets[0];
+		var param = parameterSets[0];
 		parameterSets.RemoveAt(0);
 		param.OnSimulationEnd += Grid2D;
-		while (parameterSets.Count>0)
+		while (parameterSets.Count > 0)
 		{
 			var nextParam = parameterSets[0];
 			parameterSets.RemoveAt(0);
@@ -91,13 +90,9 @@ public class Game1 : Game
 			param = nextParam;
 			param.OnSimulationEnd += Grid2D;
 		}
-		World.Init(param);
 
+		World.Init(param);
 	}
-	
-	private double[,] heatMapDataCoop = new double[9, 9];
-	private double[,] heatMapDataDefected = new double[9, 9];
-	private double[,] heatMapDataBetrayed= new double[9, 9];
 
 	private void Grid2D(object sender, List<World.Details> e)
 	{
@@ -105,7 +100,7 @@ public class Game1 : Game
 		if (simulationParameters == null) return;
 
 		// Create a new plot model for cooperation games
-		var plotModelCoop = new PlotModel { Title = "2D Grid - Cooperation Games" };
+		var plotModelCoop = new PlotModel {Title = "2D Grid - Cooperation Games"};
 		var palette = OxyPalette.Interpolate(100, OxyColors.Red, OxyColors.Lime);
 
 		// Color axis for cooperation games
@@ -130,17 +125,17 @@ public class Game1 : Game
 		});
 
 		// Update the heat map data with a new data point for cooperation games
-		int xIndex = (int)((simulationParameters.GlobalRepFactorRangeStart)  * 10)-1; // Adjust the scaling as needed
-		int yIndex = (int)(simulationParameters.GlobalRepInterpolationFactorRangeStart * 10)-1; // Adjust the scaling as needed
+		int xIndex = (int) (simulationParameters.GlobalRepFactorRangeStart * 10) - 1; // Adjust the scaling as needed
+		int yIndex = (int) (simulationParameters.GlobalRepInterpolationFactorRangeStart * 10) - 1; // Adjust the scaling as needed
 
-	
-		float coop = (float)e.Last().CoopGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
+
+		float coop = e.Last().CoopGames / (float) (e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
 		heatMapDataCoop[xIndex, yIndex] = coop;
-		float defected = (float)e.Last().DefectedGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
+		float defected = e.Last().DefectedGames / (float) (e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
 		heatMapDataDefected[xIndex, yIndex] = defected;
-		float betrayed = (float)e.Last().BetrayedGames / (float)(e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
+		float betrayed = e.Last().BetrayedGames / (float) (e.Last().CoopGames + e.Last().BetrayedGames + e.Last().DefectedGames);
 		heatMapDataBetrayed[xIndex, yIndex] = betrayed;
-		
+
 		// Create a heat map series for cooperation games
 		var heatMapSeriesCoop = new HeatMapSeries
 		{
@@ -158,8 +153,8 @@ public class Game1 : Game
 		// Define corrected plot boundaries
 		double xMin = 0.1;
 		double xMax = 0.9;
-		double yMin = 0.1;  // Changed from 0.0 to 0.1
-		double yMax = 1.0;  // Changed from 0.9 to 1.0
+		double yMin = 0.1; // Changed from 0.0 to 0.1
+		double yMax = 1.0; // Changed from 0.9 to 1.0
 
 		// Calculate grid size
 		int xSize = heatMapDataCoop.GetLength(0);
@@ -171,44 +166,42 @@ public class Game1 : Game
 
 		// Generate annotations
 		for (int x = 0; x < xSize; x++)
+		for (int y = 0; y < ySize; y++)
 		{
-			for (int y = 0; y < ySize; y++)
+			double coopValue = heatMapDataCoop[x, y];
+			double defectedValue = heatMapDataDefected[x, y];
+			double betrayedValue = heatMapDataBetrayed[x, y];
+
+			if (coopValue > 0 || defectedValue > 0 || betrayedValue > 0)
 			{
-				double coopValue = heatMapDataCoop[x, y];
-				double defectedValue = heatMapDataDefected[x, y];
-				double betrayedValue = heatMapDataBetrayed[x, y];
+				// Calculate exact center of cell with corrected Y coordinates
+				double xPos = xMin + x * cellWidth + cellWidth / 2;
+				double yPos = yMin + y * cellHeight + cellHeight / 2;
 
-				if (coopValue > 0 || defectedValue > 0 || betrayedValue > 0)
+				string text = $"C:{coopValue:F2}\nD:{defectedValue:F2}\nB:{betrayedValue:F2}";
+
+				var annotation = new TextAnnotation
 				{
-					// Calculate exact center of cell with corrected Y coordinates
-					double xPos = xMin + (x * cellWidth) + (cellWidth / 2);
-					double yPos = yMin + (y * cellHeight) + (cellHeight / 2);
-
-					string text = $"C:{coopValue:F2}\nD:{defectedValue:F2}\nB:{betrayedValue:F2}";
-
-					var annotation = new TextAnnotation
-					{
-						Text = text,
-						TextPosition = new DataPoint(xPos, yPos),
-						TextHorizontalAlignment = HorizontalAlignment.Center,
-						TextVerticalAlignment = VerticalAlignment.Top,
-						TextColor = coopValue > 0.5 ? OxyColors.Black : OxyColors.White,
-						Font = "Arial",
-						FontSize = 12,
-						Stroke = OxyColors.Black,
-						StrokeThickness = 0
-					};
-					plotModelCoop.Annotations.Add(annotation);
-				}
+					Text = text,
+					TextPosition = new DataPoint(xPos, yPos),
+					TextHorizontalAlignment = HorizontalAlignment.Center,
+					TextVerticalAlignment = VerticalAlignment.Top,
+					TextColor = coopValue > 0.5 ? OxyColors.Black : OxyColors.White,
+					Font = "Arial",
+					FontSize = 12,
+					Stroke = OxyColors.Black,
+					StrokeThickness = 0
+				};
+				plotModelCoop.Annotations.Add(annotation);
 			}
 		}
+
 		// Save the cooperation games plot as a PNG file
-		var pngExporterCoop = new PngExporter { Width = 1280, Height = 720 };
-		using (var stream = new FileStream($"grid_coop.png", FileMode.Create))
+		var pngExporterCoop = new PngExporter {Width = 1280, Height = 720};
+		using (var stream = new FileStream("grid_coop.png", FileMode.Create))
 		{
 			pngExporterCoop.Export(plotModelCoop, stream);
 		}
-
 	}
 
 
@@ -223,17 +216,17 @@ public class Game1 : Game
 			Exit();
 
 		Camera.Update(gameTime);
-		
+
 		World.Update(gameTime);
-		
-		
+
 
 		base.Update(gameTime);
 	}
+
 	protected override void Draw(GameTime gameTime)
 	{
 		GraphicsDevice.Clear(Color.DarkGray);
-		
+
 		World.Draw(_spriteBatch, gameTime);
 
 

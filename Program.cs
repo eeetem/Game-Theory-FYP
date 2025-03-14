@@ -1,2 +1,4 @@
-﻿using var game = new Game_Theory_FYP.Game1();
+﻿using Game_Theory_FYP;
+
+using var game = new Game1();
 game.Run();
