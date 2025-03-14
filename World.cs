@@ -23,20 +23,18 @@ public static class World
 	private static WrappedGrid<Cell> grid;
 	private static GameState currentState = GameState.PlayGames;
 	private static KeyboardState lastkeyboardstate;
-	private static MouseState lastmousestate;
 	public static SimulationParameters CurrentParams;
-	public static bool runSimulation = true;
 
 
 	private static bool pause = true;
 	private static float msTimeTillTick = 100;
 
 
-	private static readonly object lockObject = new();
+	private static readonly object LockObject = new();
 	private static bool tickProcessing;
 
-	private static int Generation;
-	private static readonly List<Details> detailsList = new();
+	private static int generation;
+	private static readonly List<Details> DetailsList = new();
 
 	private static int gamesCooped;
 	private static int gamesDefected;
@@ -45,8 +43,8 @@ public static class World
 
 	public static void Init(SimulationParameters parameters)
 	{
-		Generation = 0;
-		detailsList.Clear();
+		generation = 0;
+		DetailsList.Clear();
 		pause = false;
 		CurrentParams = parameters;
 		grid = new WrappedGrid<Cell>(100);
@@ -80,7 +78,7 @@ public static class World
 				msTimeTillTick = 10;
 			}
 
-			if (CurrentParams.Generations != -1 && Generation >= CurrentParams.Generations)
+			if (CurrentParams.Generations != -1 && generation >= CurrentParams.Generations)
 			{
 				pause = true;
 				DrawGraph();
@@ -101,14 +99,13 @@ public static class World
 
 		if (mstate.RightButton == ButtonState.Pressed) GetCellUnderMouse(mstate).CooperationChance = 0;
 
-		lastmousestate = mstate;
 		lastkeyboardstate = kstate;
 	}
 
 	private static void End()
 	{
 		pause = true;
-		CurrentParams.RaiseOnSimulationEnd(detailsList);
+		CurrentParams.RaiseOnSimulationEnd(DetailsList);
 		if (CurrentParams.NextSimulation != null) Init(CurrentParams.NextSimulation);
 	}
 
@@ -116,7 +113,7 @@ public static class World
 	{
 		var t = new Task(delegate
 		{
-			lock (lockObject)
+			lock (LockObject)
 			{
 				tickProcessing = true;
 				switch (currentState)
@@ -203,13 +200,13 @@ public static class World
 		Console.WriteLine("Standard Deviation of Independant Var: " + stdDevIndependantVar); // New output
 
 
-		detailsList.Add(new Details
+		DetailsList.Add(new Details
 		{
 			AvgCoop = avgCoopfactor * 100,
 			AvgRepFactor = avgRepFactor * 100,
 			AvgRepInterpolationFactor = avgRepInterpolationFactor * 100,
 			AvgScore = avgScore,
-			Generation = Generation,
+			Generation = generation,
 			CoopGames = gamesCooped,
 			BetrayedGames = gamesBetrayed,
 			DefectedGames = gamesDefected,
@@ -244,7 +241,7 @@ public static class World
 		var stdDevRepInterpolationFactorSeries = new LineSeries {Title = "Std Dev Reputation Interpolation Factor", MarkerType = MarkerType.Circle, Color = baseColorRepInterpolationFactor.ChangeIntensity(1.3)};
 		var stdDevIndependantVarSeries = new LineSeries {Title = "Std Dev Independant Var", MarkerType = MarkerType.Circle, Color = baseColorIndependantVar.ChangeIntensity(1.3)}; // New series
 
-		foreach (var detail in detailsList)
+		foreach (var detail in DetailsList)
 		{
 			avgCoopSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgCoop));
 			avgRepFactorSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRepFactor));
@@ -289,7 +286,7 @@ public static class World
 		var avgScoreSeries = new LineSeries {Title = "Avg Score", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
 		var avgRepSeries = new LineSeries {Title = "Avg Reputation", MarkerType = MarkerType.Circle, Color = OxyColors.Purple};
 
-		foreach (var detail in detailsList)
+		foreach (var detail in DetailsList)
 		{
 			avgScoreSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgScore));
 			avgRepSeries.Points.Add(new DataPoint(detail.Generation, detail.AvgRep));
@@ -323,7 +320,7 @@ public static class World
 		var betrayedGamesSeries = new LineSeries {Title = "Betrayed Games", MarkerType = MarkerType.Circle, Color = OxyColors.Red};
 		var defectedGamesSeries = new LineSeries {Title = "Mutual Defected Games", MarkerType = MarkerType.Circle, Color = OxyColors.Orange};
 
-		foreach (var detail in detailsList)
+		foreach (var detail in DetailsList)
 		{
 			coopGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.CoopGames));
 			betrayedGamesSeries.Points.Add(new DataPoint(detail.Generation, detail.BetrayedGames));
@@ -368,8 +365,8 @@ public static class World
 		for (int dy = -NeighbourhoodSize; dy <= NeighbourhoodSize; dy++)
 			if (dx != 0 || dy != 0) // Exclude the cell itself
 			{
-				int x = c.position.X + dx;
-				int y = c.position.Y + dy;
+				int x = c.Position.X + dx;
+				int y = c.Position.Y + dy;
 
 				neighbours.Add(grid.GetElement(x, y));
 			}
@@ -380,8 +377,8 @@ public static class World
 
 	public static void PlayGames()
 	{
-		Console.WriteLine("Generation: " + Generation);
-		Generation++;
+		Console.WriteLine("Generation: " + generation);
+		generation++;
 
 		gamesCooped = 0;
 		gamesDefected = 0;
@@ -414,15 +411,15 @@ public static class World
 	{
 		object l1;
 		object l2;
-		if (a.position.X + a.position.Y * grid.Size > b.position.X + b.position.Y * grid.Size)
+		if (a.Position.X + a.Position.Y * grid.Size > b.Position.X + b.Position.Y * grid.Size)
 		{
-			l1 = a.lockObject;
-			l2 = b.lockObject;
+			l1 = a.LockObject;
+			l2 = b.LockObject;
 		}
 		else
 		{
-			l1 = b.lockObject;
-			l2 = a.lockObject;
+			l1 = b.LockObject;
+			l2 = a.LockObject;
 		}
 
 		lock (l1)
@@ -589,7 +586,7 @@ public static class World
 			var neighbors = HighlightedCell.Neighbours;
 			foreach (var neighbor in neighbors)
 			{
-				var relativePos = new Vector2(neighbor.position.X - HighlightedCell.position.X, neighbor.position.Y - HighlightedCell.position.Y);
+				var relativePos = new Vector2(neighbor.Position.X - HighlightedCell.Position.X, neighbor.Position.Y - HighlightedCell.Position.Y);
 				spriteBatch.DrawRectangle(new Rectangle((int) (HighletCellDrawpos.X + relativePos.X * gridSize), (int) (HighletCellDrawpos.Y + relativePos.Y * gridSize), (int) gridSize, (int) gridSize), Color.White);
 
 				int smallerSize = (int) (gridSize * 0.6); // Adjust the factor to make the rectangles smaller

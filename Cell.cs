@@ -17,7 +17,7 @@ public class Cell : IComparable<Cell>
 	public readonly ConcurrentDictionary<Cell, ValueTuple<bool, bool>> AlreadyPlayed = new();
 
 	public readonly ConcurrentDictionary<Cell, float> KnownReputations = new();
-	public readonly Point position;
+	public readonly Point Position;
 
 	public bool CanEvolve = true;
 
@@ -25,15 +25,14 @@ public class Cell : IComparable<Cell>
 	public float CooperationChance = 0.5f;
 
 	public float CooperationChanceCache;
-
-	private float coopPercent = 0.5f;
+	
 	public int CoopThisGeneration = 0;
 	public int GamesThisGeneration = 0;
 	public float IndependantVar;
 	public float IndepententVarCahce;
-	private Color lastC = Color.Black;
+	private Color _lastC = Color.Black;
 
-	public object lockObject = new();
+	public readonly object LockObject = new();
 
 	public List<Cell> Neighbours = new();
 	public float ReputationFactor;
@@ -45,7 +44,7 @@ public class Cell : IComparable<Cell>
 
 	public Cell(Point position)
 	{
-		this.position = position;
+		this.Position = position;
 		IndependantVar = Random.Shared.NextSingle(World.CurrentParams.GlobalCoopFactorRangeStart, World.CurrentParams.GlobalCoopFactorRangeEnd);
 
 		CooperationChance = Random.Shared.NextSingle(World.CurrentParams.GlobalCoopFactorRangeStart, World.CurrentParams.GlobalCoopFactorRangeEnd);
@@ -73,10 +72,10 @@ public class Cell : IComparable<Cell>
 
 	public Color GetColor()
 	{
-		if (GamesThisGeneration == 0) return lastC;
+		if (GamesThisGeneration == 0) return _lastC;
 		float coopPercent = CoopThisGeneration / (float) GamesThisGeneration;
-		lastC = new Color(1 - coopPercent, coopPercent, 0);
-		return lastC;
+		_lastC = new Color(1 - coopPercent, coopPercent, 0);
+		return _lastC;
 	}
 
 	public Color GetColorOutline()
@@ -129,9 +128,7 @@ public class Cell : IComparable<Cell>
 	{
 		if (!CanEvolve) return;
 		CanEvolve = false;
-
-		float oldCooperationChance = CooperationChance;
-
+		
 		CooperationChance = float.Lerp(CooperationChance, candidate.CooperationChanceCache, EvolutionInterpolationFactor);
 		//CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
 		//	CooperationChance = Math.Clamp(CooperationChance, 0, 1);
@@ -160,15 +157,6 @@ public class Cell : IComparable<Cell>
 		IndepententVarCahce = IndependantVar;
 	}
 
-	public void CalcCoopPercent()
-	{
-		int cooped = 0;
-		foreach (var cell in new ConcurrentDictionary<Cell, (bool, bool)>(AlreadyPlayed))
-			if (cell.Value.Item1)
-				cooped++;
-
-		coopPercent = cooped / (float) AlreadyPlayed.Count;
-	}
 
 
 	public void Mutate()
