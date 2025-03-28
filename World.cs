@@ -580,8 +580,8 @@ public static class World
 
 			//draw coop and rep factors of the highlighted cell
 			spriteBatch.DrawText("C:" + HighlightedCell.CooperationChance.ToString("0.00"), new Vector2(HighletCellDrawpos.X, HighletCellDrawpos.Y + 10), Color.White);
-			spriteBatch.DrawText("R:" + HighlightedCell.ReputationFactor.ToString("0.00"), new Vector2(HighletCellDrawpos.X, HighletCellDrawpos.Y + 32), Color.White);
-			spriteBatch.DrawText("I:" + HighlightedCell.ReputationInterpolationFactor.ToString("0.00"), new Vector2(HighletCellDrawpos.X, HighletCellDrawpos.Y + 54), Color.White);
+			spriteBatch.DrawText("R:" + HighlightedCell.ReputationFactor.ToString("0.00"), new Vector2(HighletCellDrawpos.X, HighletCellDrawpos.Y + 25), Color.White);
+			spriteBatch.DrawText("I:" + HighlightedCell.ReputationInterpolationFactor.ToString("0.00"), new Vector2(HighletCellDrawpos.X, HighletCellDrawpos.Y + 40), Color.White);
 
 			var neighbors = HighlightedCell.Neighbours;
 			foreach (var neighbor in neighbors)
