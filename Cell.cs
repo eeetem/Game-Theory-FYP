@@ -130,21 +130,20 @@ public class Cell : IComparable<Cell>
 		
 		CooperationChance = float.Lerp(CooperationChance, candidate._cooperationChanceCache, EvolutionInterpolationFactor);
 		//CooperationChance += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
-		//	CooperationChance = Math.Clamp(CooperationChance, 0, 1);
 
 
 		IndependantVar = float.Lerp(IndependantVar, candidate._indepententVarCahce, EvolutionInterpolationFactor);
 		//IndependantVar += (float)(Random.Shared.NextDouble()-0.5)*2 * MutationFactor;
-		//IndependantVar = Math.Clamp(IndependantVar, 0, 1);
-
+		
+		Clamp();
 		if (!World.CurrentParams.RepEnabled) return;
 
 		if (World.CurrentParams.EvolveRep) ReputationFactor = float.Lerp(ReputationFactor, candidate._reputationFactorCache, EvolutionInterpolationFactor);
 		//ReputationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
-		//ReputationFactor = Math.Clamp(ReputationFactor, 0, 1f);
+
 		if (World.CurrentParams.EvolveInterpolation) ReputationInterpolationFactor = float.Lerp(ReputationInterpolationFactor, candidate._reputationInterpolationFactorCache, EvolutionInterpolationFactor);
 		//ReputationInterpolationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
-		//ReputationInterpolationFactor = Math.Clamp(ReputationInterpolationFactor, 0f, 1f);
+		Clamp();
 	}
 
 
@@ -167,5 +166,16 @@ public class Cell : IComparable<Cell>
 		if (World.CurrentParams.EvolveRep) ReputationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
 
 		if (World.CurrentParams.EvolveInterpolation) ReputationInterpolationFactor += (float) (Random.Shared.NextDouble() - 0.5) * 2 * MutationFactor;
+
+		Clamp();
+	}
+	
+	public void Clamp()
+	{
+		CooperationChance = Math.Clamp(CooperationChance, 0, 1);
+		IndependantVar = Math.Clamp(IndependantVar, 0, 1);
+		if (!World.CurrentParams.RepEnabled) return;
+		ReputationFactor = Math.Clamp(ReputationFactor, 0, 1);
+		ReputationInterpolationFactor = Math.Clamp(ReputationInterpolationFactor, 0, 1);
 	}
 }
