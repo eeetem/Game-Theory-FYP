@@ -182,7 +182,7 @@ public static class TextRenderer
 				texId = "underscore";
 				break;
 			default:
-				texId = "" + c;
+				texId = c.ToString();
 				texId = texId.ToLowerInvariant();
 				break;
 		}
